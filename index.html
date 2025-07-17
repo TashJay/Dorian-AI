@@ -14,20 +14,16 @@ font-family: 'Inter', sans-serif;
 background-color: #000000;
 }
 #avatar-container {
-position: relative; /* This is crucial for positioning the mouth */
+position: relative;
 }
-/* This container will hold the animated mouth */
 #lottie-mouth-container {
 position: absolute;
-/* You will need to fine-tune these values to place the mouth perfectly */
-/* Use developer tools (F12) to adjust these live */
 bottom: 24%;
 left: 50%;
 transform: translateX(-50%);
-width: 20%; /* Adjust size of the mouth animation */
+width: 20%;
 max-width: 60px;
 }
-
 .chat-bubble { max-width: 80%; padding: 12px 16px; border-radius: 16px; word-wrap: break-word; }
 .chat-bubble-user { background-color: #ffffff; color: #000000; border-bottom-right-radius: 4px; }
 .chat-bubble-ai, .chat-bubble-system { background-color: #1f2937; color: #ffffff; border-bottom-left-radius: 4px; }
@@ -79,8 +75,256 @@ max-width: 60px;
 <h2 class="text-3xl font-bold text-white">D.O.R.I.A.N.</h2>
 
 <div id="avatar-container" class="w-40 h-40 md:w-48 md:h-48 mx-auto my-6 bg-gray-800 rounded-full flex items-center justify-center overflow-hidden border-2 border-white">
-<img src="http://googleusercontent.com/file_content/0" class="w-full h-full object-cover" alt="DORIAN Avatar">
+<img src="./20250717_113036.jpg" class="w-full h-full object-cover" alt="DORIAN Avatar">
 <div id="lottie-mouth-container"></div>
 </div>
 
-<p class="text-gray-400">Status: <span id="status-text" class="text-green-400 font-semibold">Ready
+<p class="text-gray-400">Status: <span id="status-text" class="text-green-400 font-semibold">Ready</span></p>
+</div>
+</div>
+
+<div class="w-full md:w-2/3 lg:w-3/4 bg-gray-900 rounded-2xl flex flex-col shadow-lg">
+<div class="p-4 border-b border-gray-700 flex items-center justify-between">
+<h2 class="text-xl font-semibold">Legal Chat</h2>
+<div class="flex items-center gap-2">
+<p class="text-sm text-gray-400">Jurisdiction: <span id="jurisdiction-display" class="font-semibold text-white"></span></p>
+<button id="change-jurisdiction-btn" class="text-xs bg-gray-700 hover:bg-gray-600 text-white font-semibold py-1 px-2 rounded-md transition-colors">Change</button>
+</div>
+</div>
+
+<div id="chat-log" class="flex-1 p-4 overflow-y-auto space-y-4"></div>
+
+<div class="p-4 border-t border-gray-700">
+<form id="chat-form" class="flex items-center gap-3">
+<textarea id="chat-input" class="flex-1 bg-gray-800 text-gray-200 rounded-lg p-3 resize-none focus:outline-none focus:ring-2 focus:ring-white border border-gray-700" placeholder="Ask a legal question..." rows="1" required></textarea>
+<button type="submit" class="bg-white hover:bg-gray-200 text-black p-3 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+</button>
+</form>
+</div>
+</div>
+</div>
+
+<div id="error-modal" class="hidden absolute inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
+<div class="bg-gray-800 border border-red-500 rounded-lg p-6 text-center shadow-lg max-w-sm">
+<h3 class="text-xl font-bold text-red-500 mb-2">An Error Occurred</h3>
+<p id="error-message" class="text-gray-300 mb-4"></p>
+<button onclick="document.getElementById('error-modal').classList.add('hidden')" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">Close</button>
+</div>
+</div>
+</div>
+
+<script type="module">
+const geminiApiKey = "AIzaSyBTjCw0E5fJwFdDxP1sJvxBnPygEU3Npkw";
+
+const onboardingModal = document.getElementById('onboarding-modal');
+const appScreen = document.getElementById('app-screen');
+const chatForm = document.getElementById('chat-form');
+const chatInput = document.getElementById('chat-input');
+const chatLog = document.getElementById('chat-log');
+const statusText = document.getElementById('status-text');
+const errorModal = document.getElementById('error-modal');
+const errorMessage = document.getElementById('error-message');
+const countryInput = document.getElementById('country-input');
+const jurisdictionDisplay = document.getElementById('jurisdiction-display');
+const changeJurisdictionBtn = document.getElementById('change-jurisdiction-btn');
+const beginBtn = document.getElementById('begin-btn');
+const jurisdictionNextBtn = document.getElementById('jurisdiction-next-btn');
+const finishOnboardingBtn = document.getElementById('finish-onboarding-btn');
+
+let chatHistory = [];
+let currentJurisdiction = "General";
+let mouthAnimation;
+
+// **FIX 2**: Replaced the previous animation data with a validated, correct version.
+const mouthAnimationData = JSON.parse('{"v":"5.5.2","fr":30,"ip":0,"op":15,"w":200,"h":200,"nm":"mouth","ddd":0,"assets":[],"layers":[{"ddd":0,"ind":1,"ty":4,"nm":"mouth","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":0,"k":[100,100,0],"ix":2},"a":{"a":0,"k":[100,100,0],"ix":1},"s":{"a":0,"k":[100,100,100],"ix":6}},"ao":0,"shapes":[{"ddd":0,"ind":1,"ty":5,"nm":"Mouth","it":[{"ddd":0,"ind":1,"ty":4,"nm":"Fill 1","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":0,"k":[0,0,0],"ix":2},"a":{"a":0,"k":[50,12.5,0],"ix":1},"s":{"a":0,"k":[100,100,100],"ix":6}},"ao":0,"shapes":[{"ddd":0,"ind":1,"ty":5,"nm":"Path 1","it":[{"d":1,"ty":"sh","ks":{"a":1,"k":[{"i":{"x":0,"y":0},"o":{"x":0,"y":0},"n":"0,0,0,0","t":0,"s":[{"i":[[0,0],[0,0]],"o":[[0,0],[0,0]],"v":[[-50,0],[-50,0]],"c":true}]},{"i":{"x":0,"y":0},"o":{"x":0,"y":0},"n":"0,0,0,0","t":2,"s":[{"i":[[-2.76,13.81],[2.76,13.81]],"o":[[2.76,-13.81],[-2.76,-13.81]],"v":[[-50,25],[50,25]],"c":false}]},{"i":{"x":0,"y":0},"o":{"x":0,"y":0},"n":"0,0,0,0","t":5,"s":[{"i":[[0,0],[0,0]],"o":[[0,0],[0,0]],"v":[[-50,0],[-50,0]],"c":true}]}]}},{"ty":"fl","c":{"a":0,"k":[0,0,0,1],"ix":4},"o":{"a":0,"k":100,"ix":5},"r":1}],"hd":false}]}],"hd":false}]}],"markers":[]}');
+
+function setupAvatar() {
+const mouthContainer = document.getElementById('lottie-mouth-container');
+if (!mouthContainer) return;
+mouthAnimation = lottie.loadAnimation({
+container: mouthContainer,
+renderer: 'svg',
+loop: true,
+autoplay: false,
+animationData: mouthAnimationData
+});
+}
+
+beginBtn.addEventListener('click', () => {
+document.getElementById('onboarding-step-1').classList.add('hidden-step');
+document.getElementById('onboarding-step-2').classList.remove('hidden-step');
+});
+
+jurisdictionNextBtn.addEventListener('click', () => {
+const country = countryInput.value.trim();
+if (!country) {
+alert("Please enter a country to set your jurisdiction.");
+return;
+}
+currentJurisdiction = country;
+jurisdictionDisplay.textContent = currentJurisdiction;
+document.getElementById('onboarding-step-2').classList.add('hidden-step');
+document.getElementById('onboarding-step-3').classList.remove('hidden-step');
+});
+
+finishOnboardingBtn.addEventListener('click', () => {
+onboardingModal.style.opacity = '0';
+setTimeout(() => {
+onboardingModal.classList.add('hidden');
+appScreen.classList.remove('hidden');
+addMessageToLog('system', `Jurisdiction set to ${currentJurisdiction}. You can now ask questions.`);
+setupAvatar();
+}, 300);
+});
+
+changeJurisdictionBtn.addEventListener('click', () => {
+const newJurisdiction = prompt("Enter new jurisdiction:", currentJurisdiction);
+if (newJurisdiction && newJurisdiction.trim() !== "") {
+currentJurisdiction = newJurisdiction.trim();
+jurisdictionDisplay.textContent = currentJurisdiction;
+addMessageToLog('system', `Jurisdiction changed to ${currentJurisdiction}.`);
+chatHistory = [];
+}
+});
+
+chatForm.addEventListener('submit', async (e) => {
+e.preventDefault();
+const userInput = chatInput.value.trim();
+if (!userInput) return;
+
+addMessageToLog('user', userInput);
+chatInput.value = '';
+chatInput.style.height = 'auto';
+setStatus('thinking');
+
+try {
+const prompt = `As a legal AI assistant for ${currentJurisdiction}, answer the following. Keep it informative but not overly long. End with the short disclaimer: "AI response. Not legal advice."\n\nUser query: "${userInput}"`;
+chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+const payload = { contents: chatHistory };
+const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`;
+
+const response = await fetch(apiUrl, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify(payload)
+});
+
+if (!response.ok) {
+const errorBody = await response.json();
+throw new Error(`API error: ${errorBody.error.message}`);
+}
+
+const result = await response.json();
+
+if (result.candidates && result.candidates[0].content.parts.length > 0) {
+const aiResponse = result.candidates[0].content.parts[0].text;
+chatHistory.push({ role: "model", parts: [{ text: aiResponse }] });
+addMessageToLog('ai', aiResponse);
+speak(aiResponse);
+} else {
+const blockReason = result.promptFeedback?.blockReason || 'an unknown reason';
+const emptyResponseText = `I am unable to provide a response, possibly due to safety settings (${blockReason}).`;
+addMessageToLog('ai', emptyResponseText);
+speak(emptyResponseText);
+}
+} catch (error) {
+console.error("API Error:", error);
+const errorMessageText = "Sorry, an error occurred. Please try again.";
+addMessageToLog('ai', errorMessageText);
+showError(error.message);
+setStatus('ready');
+}
+});
+
+function addMessageToLog(sender, text) {
+const messageDiv = document.createElement('div');
+const bubble = document.createElement('div');
+if (sender === 'system') {
+messageDiv.className = 'flex justify-center';
+bubble.className = 'chat-bubble-system';
+} else {
+messageDiv.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
+bubble.className = `chat-bubble ${sender === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'}`;
+}
+bubble.innerHTML = text.replace(/\n/g, '<br>');
+messageDiv.appendChild(bubble);
+chatLog.appendChild(messageDiv);
+chatLog.scrollTop = chatLog.scrollHeight;
+}
+
+function speak(text) {
+if (!('speechSynthesis' in window) || !mouthAnimation) {
+if(!mouthAnimation) console.error("Mouth animation not initialized.");
+setStatus('ready');
+return;
+}
+window.speechSynthesis.cancel();
+
+const utterance = new SpeechSynthesisUtterance(text);
+
+utterance.onstart = () => {
+setStatus('speaking');
+mouthAnimation.play();
+};
+
+utterance.onend = () => {
+setStatus('ready');
+mouthAnimation.stop();
+};
+
+utterance.onerror = (e) => {
+console.error('Speech synthesis error:', e.error);
+setStatus('ready');
+mouthAnimation.stop();
+};
+
+window.speechSynthesis.speak(utterance);
+}
+
+function setStatus(status) {
+const button = chatForm.querySelector('button');
+switch (status) {
+case 'thinking':
+statusText.textContent = 'Thinking...';
+statusText.className = 'text-yellow-400 font-semibold';
+button.disabled = true;
+break;
+case 'speaking':
+statusText.textContent = 'Speaking...';
+statusText.className = 'text-blue-400 font-semibold';
+button.disabled = true;
+break;
+default:
+statusText.textContent = 'Ready';
+statusText.className = 'text-green-400 font-semibold';
+button.disabled = false;
+break;
+}
+}
+
+function showError(message) {
+errorMessage.textContent = message;
+errorModal.classList.remove('hidden');
+}
+
+chatInput.addEventListener('input', () => {
+chatInput.style.height = 'auto';
+const scrollHeight = chatInput.scrollHeight;
+const maxHeight = 150;
+if (scrollHeight > maxHeight) {
+chatInput.style.overflowY = 'auto';
+chatInput.style.height = maxHeight + 'px';
+} else {
+chatInput.style.overflowY = 'hidden';
+chatInput.style.height = scrollHeight + 'px';
+}
+});
+
+// **FIX 3**: Added a console log to confirm the script runs.
+console.log("D.O.R.I.A.N. script loaded successfully.");
+
+</script>
+</body>
+</html>
