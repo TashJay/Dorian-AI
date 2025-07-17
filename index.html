@@ -132,9 +132,9 @@ animation: talk 0.3s infinite;
 
 <script type="module">
 // --- START OF CHANGES ---
-
-// 1. Replaced Gemini API key with DeepSeek API key
-const deepseekApiKey = "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";
+// 1. Inserted the new Gemini API Key
+const geminiApiKey = "AIzaSyBTjCw0E5fJwFdDxP1sJvxBnPygEU3Npkw";
+// --- END OF CHANGES ---
 
 const onboardingModal = document.getElementById('onboarding-modal');
 const appScreen = document.getElementById('app-screen');
@@ -149,16 +149,8 @@ const countryInput = document.getElementById('country-input');
 const jurisdictionDisplay = document.getElementById('jurisdiction-display');
 const changeJurisdictionBtn = document.getElementById('change-jurisdiction-btn');
 
-// 2. Updated chat history to be compatible with the DeepSeek API format
 let chatHistory = [];
 let currentJurisdiction = "General";
-
-function getSystemMessage() {
-return {
-role: "system",
-content: `You are an AI legal assistant named D.O.R.I.A.N. You are configured for the jurisdiction of ${currentJurisdiction}. Provide informative, but not overly long, answers. ALWAYS end your response with the short disclaimer: "AI response. Not legal advice."`
-};
-}
 
 window.nextOnboardingStep = (step) => {
 const currentStepDiv = document.getElementById(`onboarding-step-${step}`);
@@ -184,7 +176,6 @@ setTimeout(() => {
 onboardingModal.classList.add('hidden');
 appScreen.classList.remove('hidden');
 addMessageToLog('system', `Jurisdiction set to ${currentJurisdiction}. You can now ask questions.`);
-chatHistory = []; // Reset history
 }, 300);
 };
 
@@ -193,12 +184,12 @@ const newJurisdiction = prompt("Enter a new country or jurisdiction:", currentJu
 if (newJurisdiction && newJurisdiction.trim() !== "") {
 currentJurisdiction = newJurisdiction.trim();
 jurisdictionDisplay.textContent = currentJurisdiction;
-chatHistory = []; // Reset history for new jurisdiction
 addMessageToLog('system', `Jurisdiction changed to ${currentJurisdiction}.`);
+// Resetting chat history after changing jurisdiction
+chatHistory = [];
 }
 });
 
-// 3. Re-wrote the chat submission logic to use the DeepSeek API
 chatForm.addEventListener('submit', async (e) => {
 e.preventDefault();
 const userInput = chatInput.value.trim();
@@ -210,25 +201,19 @@ chatInput.style.height = 'auto';
 
 setStatus('thinking');
 
-// Add user message to history
-chatHistory.push({ role: "user", content: userInput });
-
-// Prepare messages for API call, including the system prompt
-const messagesForApi = [getSystemMessage(), ...chatHistory];
-
 try {
-const payload = {
-model: "deepseek-chat",
-messages: messagesForApi
-};
-const apiUrl = `https://api.deepseek.com/chat/completions`;
+// The prompt now includes the system instruction with every user query.
+const prompt = `As a legal AI assistant for ${currentJurisdiction}, answer the following. Keep it informative but not overly long. End with the short disclaimer: "AI response. Not legal advice."\n\nUser query: "${userInput}"`;
+
+chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+const payload = { contents: chatHistory };
+// The API URL uses the Gemini model and the provided API key.
+const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`;
 
 const response = await fetch(apiUrl, {
 method: 'POST',
-headers: {
-'Content-Type': 'application/json',
-'Authorization': `Bearer ${deepseekApiKey}`
-},
+headers: { 'Content-Type': 'application/json' },
 body: JSON.stringify(payload)
 });
 
@@ -239,27 +224,28 @@ throw new Error(`API request failed: ${errorBody.error.message}`);
 
 const result = await response.json();
 
-if (result.choices && result.choices.length > 0) {
-const aiResponse = result.choices[0].message.content;
-// Add AI response to history
-chatHistory.push({ role: "assistant", content: aiResponse });
+if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts.length > 0) {
+const aiResponse = result.candidates[0].content.parts[0].text;
+chatHistory.push({ role: "model", parts: [{ text: aiResponse }] });
 addMessageToLog('ai', aiResponse);
 speak(aiResponse);
 } else {
-throw new Error("Received an empty response from the API.");
+// Handle cases where the API returns no candidates (e.g., safety blocks)
+const blockReason = result.promptFeedback?.blockReason || 'an unknown reason';
+const emptyResponseText = `I am unable to provide a response to that query, possibly due to safety settings (${blockReason}). Please try a different question.`;
+addMessageToLog('ai', emptyResponseText);
+speak(emptyResponseText);
 }
 
 } catch (error) {
-console.error("DeepSeek API Error:", error);
-const errorMessageText = "I'm sorry, an error occurred. Please check the console for details.";
+console.error("Gemini API Error:", error);
+const errorMessageText = "I'm sorry, I encountered an error while processing your request. Please try again later.";
 addMessageToLog('ai', errorMessageText);
 showError(error.message);
 } finally {
 setStatus('ready');
 }
 });
-
-// --- END OF CHANGES --- (The functions below are unchanged but necessary)
 
 function addMessageToLog(sender, text) {
 const messageDiv = document.createElement('div');
