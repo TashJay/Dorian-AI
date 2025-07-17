@@ -6,50 +6,36 @@
 <title>D.O.R.I.A.N - AI Legal Assistant</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+
 <style>
 body {
 font-family: 'Inter', sans-serif;
 background-color: #000000;
 }
-.chat-bubble {
-max-width: 80%;
-padding: 12px 16px;
-border-radius: 16px;
-word-wrap: break-word;
+#avatar-container {
+position: relative; /* This is crucial for positioning the mouth */
 }
-.chat-bubble-user {
-background-color: #ffffff;
-color: #000000;
-border-bottom-right-radius: 4px;
-}
-.chat-bubble-ai, .chat-bubble-system {
-background-color: #1f2937; /* gray-800 */
-color: #ffffff;
-border-bottom-left-radius: 4px;
-}
-.chat-bubble-system {
-font-style: italic;
-text-align: center;
-width: 100%;
-max-width: 100%;
-background-color: #111827; /* gray-900 */
-}
-.onboarding-step {
-transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
-}
-.hidden-step {
-opacity: 0;
-transform: translateY(20px);
+/* This container will hold the animated mouth */
+#lottie-mouth-container {
 position: absolute;
-pointer-events: none;
+/* You will need to fine-tune these values to place the mouth perfectly */
+/* Use developer tools (F12) to adjust these live */
+bottom: 24%;
+left: 50%;
+transform: translateX(-50%);
+width: 20%; /* Adjust size of the mouth animation */
+max-width: 60px;
 }
-@keyframes talk {
-0%, 100% { transform: scaleY(1); }
-50% { transform: scaleY(1.2); }
-}
-.talking {
-animation: talk 0.3s infinite;
-}
+
+.chat-bubble { max-width: 80%; padding: 12px 16px; border-radius: 16px; word-wrap: break-word; }
+.chat-bubble-user { background-color: #ffffff; color: #000000; border-bottom-right-radius: 4px; }
+.chat-bubble-ai, .chat-bubble-system { background-color: #1f2937; color: #ffffff; border-bottom-left-radius: 4px; }
+.chat-bubble-system { font-style: italic; text-align: center; width: 100%; max-width: 100%; background-color: #111827; }
+.onboarding-step { transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out; }
+.hidden-step { opacity: 0; transform: translateY(20px); position: absolute; pointer-events: none; }
+@keyframes talk { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.2); } }
+.talking { animation: talk 0.3s infinite; }
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: #111827; }
 ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
@@ -64,9 +50,9 @@ animation: talk 0.3s infinite;
 <div class="relative max-w-lg w-full">
 <div id="onboarding-step-1" class="onboarding-step text-center p-8 bg-gray-900 rounded-2xl shadow-2xl">
 <div class="w-full h-40 bg-gray-700 rounded-lg mb-6 overflow-hidden">
-<img src="https://placehold.co/600x300/000000/FFFFFF?text=D.O.R.I.A.N." alt="DORIAN Placeholder" class="w-full h-full object-cover">
+<img src="https://placehold.co/600x300/000000/FFFFFF?text=D.O.R.I.A.N" alt="DORIAN Placeholder" class="w-full h-full object-cover">
 </div>
-<h1 class="text-4xl md:text-5xl font-bold text-white mb-4">D.O.R.I.A.N.</h1>
+<h1 class="text-4xl md:text-5xl font-bold text-white mb-4">D.O.R.I.A.N</h1>
 <p class="text-lg text-gray-300 mb-2">Your AI-Powered Legal Information Assistant</p>
 <p class="text-sm text-gray-500 mb-6">by Jay Irungu</p>
 <button onclick="nextOnboardingStep(1)" class="bg-white text-black font-bold py-3 px-8 rounded-lg transition-colors hover:bg-gray-200 w-full">Begin</button>
@@ -90,10 +76,11 @@ animation: talk 0.3s infinite;
 <div id="app-screen" class="hidden w-full h-full flex flex-col md:flex-row p-2 md:p-4 gap-4">
 <div class="w-full md:w-1/3 lg:w-1/4 bg-gray-900 rounded-2xl p-6 flex flex-col items-center justify-center shadow-lg">
 <div class="w-full text-center">
-<h2 class="text-3xl font-bold text-white">D.O.R.I.A.N.</h2>
-<div id="avatar-container" class="relative w-40 h-40 md:w-48 md:h-48 mx-auto my-6 bg-gray-800 rounded-full flex items-center justify-center overflow-hidden border-2 border-white">
-<svg class="w-32 h-32 md:w-36 md:h-36 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd"></path></svg>
-<div id="avatar-mouth" class="absolute bottom-10 w-12 h-4 bg-black rounded-md" style="transform-origin: center;"></div>
+<h2 class="text-3xl font-bold text-white">D.O.R.I.A.N</h2>
+
+<div id="avatar-container" class="w-40 h-40 md:w-48 md:h-48 mx-auto my-6 bg-gray-800 rounded-full flex items-center justify-center overflow-hidden border-2 border-white">
+<img src="http://googleusercontent.com/file_content/0" class="w-full h-full object-cover" alt="DORIAN Avatar">
+<div id="lottie-mouth-container"></div>
 </div>
 <p class="text-gray-400">Status: <span id="status-text" class="text-green-400 font-semibold">Ready</span></p>
 </div>
@@ -131,10 +118,7 @@ animation: talk 0.3s infinite;
 </div>
 
 <script type="module">
-// --- START OF CHANGES ---
-// 1. Inserted the new Gemini API Key
 const geminiApiKey = "AIzaSyBTjCw0E5fJwFdDxP1sJvxBnPygEU3Npkw";
-// --- END OF CHANGES ---
 
 const onboardingModal = document.getElementById('onboarding-modal');
 const appScreen = document.getElementById('app-screen');
@@ -142,7 +126,6 @@ const chatForm = document.getElementById('chat-form');
 const chatInput = document.getElementById('chat-input');
 const chatLog = document.getElementById('chat-log');
 const statusText = document.getElementById('status-text');
-const avatarMouth = document.getElementById('avatar-mouth');
 const errorModal = document.getElementById('error-modal');
 const errorMessage = document.getElementById('error-message');
 const countryInput = document.getElementById('country-input');
@@ -151,6 +134,28 @@ const changeJurisdictionBtn = document.getElementById('change-jurisdiction-btn')
 
 let chatHistory = [];
 let currentJurisdiction = "General";
+let mouthAnimation; // Variable to hold the Lottie animation instance
+
+// --- START OF AVATAR SCRIPT ---
+
+// 4. Embedded Lottie JSON data for the mouth animation
+const mouthAnimationData = {"v":"5.5.0","fr":60,"ip":0,"op":30,"w":200,"h":100,"nm":"Mouth","ddd":0,"assets":[],"layers":[{"ddd":0,"ind":1,"ty":4,"nm":"Mouth Shapes","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":0,"k":[100,50,0],"ix":2},"a":{"a":0,"k":[0,0,0],"ix":1},"s":{"a":0,"k":[100,100,100],"ix":6}},"ao":0,"shapes":[{"ddd":0,"ind":1,"ty":5,"nm":"Mouth Group","hd":false,"it":[{"ind":0,"ty":"sh","ix":1,"ks":{"a":1,"k":[{"t":0,"s":[{"i":{"x":[0.833],"y":[0.833]},"o":{"x":[0.167],"y":[0.167]},"n":"0p833_0p833_0p167_0p167","t":0,"v":[[[-45.5,0],[-25.5,0],[-5.5,0],[14.5,0],[34.5,0],[54.5,0]]]}],"e":[{"t":5,"s":[{"i":{"x":[0.833],"y":[0.833]},"o":{"x":[0.167],"y":[0.167]},"n":"0p833_0p833_0p167_0p167","t":0,"v":[[[-45.5,0],[-25.5,-10],[-5.5,-15],[14.5,-15],[34.5,-10],[54.5,0]]]}],"h":0}},"nm":"Mouth Path","mn":"ADBE Vector Shape - Group","hd":false},{"ind":1,"ty":"fl","ix":2,"ks":{"a":0,"k":[0.9,0.9,0.9,1],"ix":4},"nm":"Fill","mn":"ADBE Vector Graphic - Fill","hd":false},{"ind":2,"ty":"st","ix":3,"ks":{"o":{"a":0,"k":100,"ix":3},"w":{"a":0,"k":4,"ix":2},"c":{"a":0,"k":[0.1,0.1,0.1,1],"ix":1}},"nm":"Stroke","mn":"ADBE Vector Graphic - Stroke","lc":2,"lj":2,"ml":4,"hd":false},{"ind":3,"ty":"tr","ix":4,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":0,"k":[0,0],"ix":2},"a":{"a":0,"k":[0,0],"ix":1},"s":{"a":0,"k":[100,100],"ix":6}},"nm":"Transform","mn":"ADBE Vector Group Transform","hd":false}]}],"ip":0,"op":30,"st":0,"bm":0}]};
+
+// Function to load and initialize the Lottie animation
+function setupAvatar() {
+const mouthContainer = document.getElementById('lottie-mouth-container');
+if (!mouthContainer) return;
+
+mouthAnimation = lottie.loadAnimation({
+container: mouthContainer,
+renderer: 'svg',
+loop: true,
+autoplay: false,
+animationData: mouthAnimationData
+});
+}
+
+// --- END OF AVATAR SCRIPT ---
 
 window.nextOnboardingStep = (step) => {
 const currentStepDiv = document.getElementById(`onboarding-step-${step}`);
@@ -158,14 +163,10 @@ const nextStepDiv = document.getElementById(`onboarding-step-${step + 1}`);
 
 if (step === 2) {
 const country = countryInput.value.trim();
-if (!country) {
-alert("Please enter a country to set your jurisdiction.");
-return;
-}
+if (!country) { alert("Please enter a country."); return; }
 currentJurisdiction = country;
 jurisdictionDisplay.textContent = currentJurisdiction;
 }
-
 currentStepDiv.classList.add('hidden-step');
 nextStepDiv.classList.remove('hidden-step');
 };
@@ -175,17 +176,17 @@ onboardingModal.style.opacity = '0';
 setTimeout(() => {
 onboardingModal.classList.add('hidden');
 appScreen.classList.remove('hidden');
-addMessageToLog('system', `Jurisdiction set to ${currentJurisdiction}. You can now ask questions.`);
+addMessageToLog('system', `Jurisdiction set to ${currentJurisdiction}.`);
+setupAvatar(); // Set up the avatar once the main screen is visible
 }, 300);
 };
 
 changeJurisdictionBtn.addEventListener('click', () => {
-const newJurisdiction = prompt("Enter a new country or jurisdiction:", currentJurisdiction);
+const newJurisdiction = prompt("Enter new jurisdiction:", currentJurisdiction);
 if (newJurisdiction && newJurisdiction.trim() !== "") {
 currentJurisdiction = newJurisdiction.trim();
 jurisdictionDisplay.textContent = currentJurisdiction;
 addMessageToLog('system', `Jurisdiction changed to ${currentJurisdiction}.`);
-// Resetting chat history after changing jurisdiction
 chatHistory = [];
 }
 });
@@ -198,17 +199,13 @@ if (!userInput) return;
 addMessageToLog('user', userInput);
 chatInput.value = '';
 chatInput.style.height = 'auto';
-
 setStatus('thinking');
 
 try {
-// The prompt now includes the system instruction with every user query.
 const prompt = `As a legal AI assistant for ${currentJurisdiction}, answer the following. Keep it informative but not overly long. End with the short disclaimer: "AI response. Not legal advice."\n\nUser query: "${userInput}"`;
-
 chatHistory.push({ role: "user", parts: [{ text: prompt }] });
 
 const payload = { contents: chatHistory };
-// The API URL uses the Gemini model and the provided API key.
 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`;
 
 const response = await fetch(apiUrl, {
@@ -219,30 +216,27 @@ body: JSON.stringify(payload)
 
 if (!response.ok) {
 const errorBody = await response.json();
-throw new Error(`API request failed: ${errorBody.error.message}`);
+throw new Error(`API error: ${errorBody.error.message}`);
 }
 
 const result = await response.json();
 
-if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts.length > 0) {
+if (result.candidates && result.candidates[0].content.parts.length > 0) {
 const aiResponse = result.candidates[0].content.parts[0].text;
 chatHistory.push({ role: "model", parts: [{ text: aiResponse }] });
 addMessageToLog('ai', aiResponse);
-speak(aiResponse);
+speak(aiResponse); // This will now trigger the lip-sync
 } else {
-// Handle cases where the API returns no candidates (e.g., safety blocks)
 const blockReason = result.promptFeedback?.blockReason || 'an unknown reason';
-const emptyResponseText = `I am unable to provide a response to that query, possibly due to safety settings (${blockReason}). Please try a different question.`;
+const emptyResponseText = `I am unable to provide a response, possibly due to safety settings (${blockReason}).`;
 addMessageToLog('ai', emptyResponseText);
 speak(emptyResponseText);
 }
-
 } catch (error) {
-console.error("Gemini API Error:", error);
-const errorMessageText = "I'm sorry, I encountered an error while processing your request. Please try again later.";
+console.error("API Error:", error);
+const errorMessageText = "Sorry, an error occurred. Please try again.";
 addMessageToLog('ai', errorMessageText);
 showError(error.message);
-} finally {
 setStatus('ready');
 }
 });
@@ -250,7 +244,6 @@ setStatus('ready');
 function addMessageToLog(sender, text) {
 const messageDiv = document.createElement('div');
 const bubble = document.createElement('div');
-
 if (sender === 'system') {
 messageDiv.className = 'flex justify-center';
 bubble.className = 'chat-bubble-system';
@@ -258,28 +251,42 @@ bubble.className = 'chat-bubble-system';
 messageDiv.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
 bubble.className = `chat-bubble ${sender === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'}`;
 }
-
 bubble.innerHTML = text.replace(/\n/g, '<br>');
 messageDiv.appendChild(bubble);
 chatLog.appendChild(messageDiv);
 chatLog.scrollTop = chatLog.scrollHeight;
 }
 
+// 5. Upgraded speak() function for lip-sync
 function speak(text) {
-if (!('speechSynthesis' in window)) {
-console.warn("Speech Synthesis not supported.");
+if (!('speechSynthesis' in window) || !mouthAnimation) {
+console.warn("Speech Synthesis or Avatar not ready.");
 setStatus('ready');
 return;
 }
+window.speechSynthesis.cancel(); // Cancel any previous speech
+
 const utterance = new SpeechSynthesisUtterance(text);
-utterance.onstart = () => { setStatus('speaking'); avatarMouth.classList.add('talking'); };
-utterance.onend = () => { setStatus('ready'); avatarMouth.classList.remove('talking'); };
+
+// When speech starts, play the mouth animation
+utterance.onstart = () => {
+setStatus('speaking');
+mouthAnimation.play();
+};
+
+// When speech ends, stop the mouth animation
+utterance.onend = () => {
+setStatus('ready');
+mouthAnimation.stop();
+};
+
+// Also stop animation on error
 utterance.onerror = (e) => {
 console.error('Speech synthesis error:', e.error);
 setStatus('ready');
-avatarMouth.classList.remove('talking');
+mouthAnimation.stop();
 };
-window.speechSynthesis.cancel();
+
 window.speechSynthesis.speak(utterance);
 }
 
