@@ -6,32 +6,50 @@
 <title>D.O.R.I.A.N - AI Legal Assistant</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
-
 <style>
 body {
 font-family: 'Inter', sans-serif;
 background-color: #000000;
 }
-#avatar-container {
-position: relative;
+.chat-bubble {
+max-width: 80%;
+padding: 12px 16px;
+border-radius: 16px;
+word-wrap: break-word;
 }
-#lottie-mouth-container {
+.chat-bubble-user {
+background-color: #ffffff;
+color: #000000;
+border-bottom-right-radius: 4px;
+}
+.chat-bubble-ai, .chat-bubble-system {
+background-color: #1f2937; /* gray-800 */
+color: #ffffff;
+border-bottom-left-radius: 4px;
+}
+.chat-bubble-system {
+font-style: italic;
+text-align: center;
+width: 100%;
+max-width: 100%;
+background-color: #111827; /* gray-900 */
+}
+.onboarding-step {
+transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+}
+.hidden-step {
+opacity: 0;
+transform: translateY(20px);
 position: absolute;
-bottom: 24%;
-left: 50%;
-transform: translateX(-50%);
-width: 20%;
-max-width: 60px;
+pointer-events: none;
 }
-.chat-bubble { max-width: 80%; padding: 12px 16px; border-radius: 16px; word-wrap: break-word; }
-.chat-bubble-user { background-color: #ffffff; color: #000000; border-bottom-right-radius: 4px; }
-.chat-bubble-ai, .chat-bubble-system { background-color: #1f2937; color: #ffffff; border-bottom-left-radius: 4px; }
-.chat-bubble-system { font-style: italic; text-align: center; width: 100%; max-width: 100%; background-color: #111827; }
-.onboarding-step { transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out; }
-.hidden-step { opacity: 0; transform: translateY(20px); position: absolute; pointer-events: none; }
-@keyframes talk { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.2); } }
-.talking { animation: talk 0.3s infinite; }
+@keyframes talk {
+0%, 100% { transform: scaleY(1); }
+50% { transform: scaleY(1.2); }
+}
+.talking {
+animation: talk 0.3s infinite;
+}
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: #111827; }
 ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
@@ -42,43 +60,47 @@ max-width: 60px;
 
 <div id="app-container" class="w-full h-screen max-w-7xl mx-auto flex flex-col">
 
+<!-- Onboarding Modal -->
 <div id="onboarding-modal" class="absolute inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center p-4">
 <div class="relative max-w-lg w-full">
+<!-- Step 1: Welcome -->
 <div id="onboarding-step-1" class="onboarding-step text-center p-8 bg-gray-900 rounded-2xl shadow-2xl">
 <div class="w-full h-40 bg-gray-700 rounded-lg mb-6 overflow-hidden">
 <img src="https://placehold.co/600x300/000000/FFFFFF?text=D.O.R.I.A.N." alt="DORIAN Placeholder" class="w-full h-full object-cover">
 </div>
 <h1 class="text-4xl md:text-5xl font-bold text-white mb-4">D.O.R.I.A.N.</h1>
 <p class="text-lg text-gray-300 mb-2">Your AI-Powered Legal Information Assistant</p>
+<!-- Contributor Credit Added -->
 <p class="text-sm text-gray-500 mb-6">by Jay Irungu</p>
-<button id="begin-btn" class="bg-white text-black font-bold py-3 px-8 rounded-lg transition-colors hover:bg-gray-200 w-full">Begin</button>
+<button onclick="nextOnboardingStep(1)" class="bg-white text-black font-bold py-3 px-8 rounded-lg transition-colors hover:bg-gray-200 w-full">Begin</button>
 </div>
 
+<!-- Step 2: Ask for Country -->
 <div id="onboarding-step-2" class="onboarding-step hidden-step text-center p-8 bg-gray-900 rounded-2xl shadow-2xl">
 <h2 class="text-2xl md:text-3xl font-bold text-white mb-4">Set Your Jurisdiction</h2>
 <p class="text-gray-300 mb-6">To provide relevant information, please tell me which country's laws you are interested in.</p>
 <input type="text" id="country-input" placeholder="e.g., Canada" class="w-full bg-gray-800 text-white p-3 rounded-lg mb-6 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-white">
-<button id="jurisdiction-next-btn" class="bg-white text-black font-bold py-3 px-8 rounded-lg transition-colors hover:bg-gray-200 w-full">Next</button>
+<button onclick="nextOnboardingStep(2)" class="bg-white text-black font-bold py-3 px-8 rounded-lg transition-colors hover:bg-gray-200 w-full">Next</button>
 </div>
 
+<!-- Step 3: Disclaimer -->
 <div id="onboarding-step-3" class="onboarding-step hidden-step text-center p-8 bg-gray-900 rounded-2xl shadow-2xl">
 <h2 class="text-2xl md:text-3xl font-bold text-white mb-4">Final Step: Disclaimer</h2>
 <p class="text-sm text-gray-400 mb-6 p-4 bg-gray-800 rounded-lg">Remember, I am an AI, not a substitute for a qualified lawyer. My responses are for informational purposes only and do not constitute legal advice.</p>
-<button id="finish-onboarding-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-lg transition-colors w-full">I Understand & Enter</button>
+<button onclick="finishOnboarding()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-lg transition-colors w-full">I Understand & Enter</button>
 </div>
 </div>
 </div>
 
+<!-- Main App Screen -->
 <div id="app-screen" class="hidden w-full h-full flex flex-col md:flex-row p-2 md:p-4 gap-4">
 <div class="w-full md:w-1/3 lg:w-1/4 bg-gray-900 rounded-2xl p-6 flex flex-col items-center justify-center shadow-lg">
 <div class="w-full text-center">
 <h2 class="text-3xl font-bold text-white">D.O.R.I.A.N.</h2>
-
-<div id="avatar-container" class="w-40 h-40 md:w-48 md:h-48 mx-auto my-6 bg-gray-800 rounded-full flex items-center justify-center overflow-hidden border-2 border-white">
-<img src="./20250717_113036.jpg" class="w-full h-full object-cover" alt="DORIAN Avatar">
-<div id="lottie-mouth-container"></div>
+<div id="avatar-container" class="relative w-40 h-40 md:w-48 md:h-48 mx-auto my-6 bg-gray-800 rounded-full flex items-center justify-center overflow-hidden border-2 border-white">
+<svg class="w-32 h-32 md:w-36 md:h-36 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd"></path></svg>
+<div id="avatar-mouth" class="absolute bottom-10 w-12 h-4 bg-black rounded-md" style="transform-origin: center;"></div>
 </div>
-
 <p class="text-gray-400">Status: <span id="status-text" class="text-green-400 font-semibold">Ready</span></p>
 </div>
 </div>
@@ -115,7 +137,7 @@ max-width: 60px;
 </div>
 
 <script type="module">
-const geminiApiKey = "AIzaSyBTjCw0E5fJwFdDxP1sJvxBnPygEU3Npkw";
+const geminiApiKey = "";
 
 const onboardingModal = document.getElementById('onboarding-modal');
 const appScreen = document.getElementById('app-screen');
@@ -123,40 +145,21 @@ const chatForm = document.getElementById('chat-form');
 const chatInput = document.getElementById('chat-input');
 const chatLog = document.getElementById('chat-log');
 const statusText = document.getElementById('status-text');
+const avatarMouth = document.getElementById('avatar-mouth');
 const errorModal = document.getElementById('error-modal');
 const errorMessage = document.getElementById('error-message');
 const countryInput = document.getElementById('country-input');
 const jurisdictionDisplay = document.getElementById('jurisdiction-display');
 const changeJurisdictionBtn = document.getElementById('change-jurisdiction-btn');
-const beginBtn = document.getElementById('begin-btn');
-const jurisdictionNextBtn = document.getElementById('jurisdiction-next-btn');
-const finishOnboardingBtn = document.getElementById('finish-onboarding-btn');
 
 let chatHistory = [];
 let currentJurisdiction = "General";
-let mouthAnimation;
 
-// **FIX 2**: Replaced the previous animation data with a validated, correct version.
-const mouthAnimationData = JSON.parse('{"v":"5.5.2","fr":30,"ip":0,"op":15,"w":200,"h":200,"nm":"mouth","ddd":0,"assets":[],"layers":[{"ddd":0,"ind":1,"ty":4,"nm":"mouth","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":0,"k":[100,100,0],"ix":2},"a":{"a":0,"k":[100,100,0],"ix":1},"s":{"a":0,"k":[100,100,100],"ix":6}},"ao":0,"shapes":[{"ddd":0,"ind":1,"ty":5,"nm":"Mouth","it":[{"ddd":0,"ind":1,"ty":4,"nm":"Fill 1","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":0,"k":[0,0,0],"ix":2},"a":{"a":0,"k":[50,12.5,0],"ix":1},"s":{"a":0,"k":[100,100,100],"ix":6}},"ao":0,"shapes":[{"ddd":0,"ind":1,"ty":5,"nm":"Path 1","it":[{"d":1,"ty":"sh","ks":{"a":1,"k":[{"i":{"x":0,"y":0},"o":{"x":0,"y":0},"n":"0,0,0,0","t":0,"s":[{"i":[[0,0],[0,0]],"o":[[0,0],[0,0]],"v":[[-50,0],[-50,0]],"c":true}]},{"i":{"x":0,"y":0},"o":{"x":0,"y":0},"n":"0,0,0,0","t":2,"s":[{"i":[[-2.76,13.81],[2.76,13.81]],"o":[[2.76,-13.81],[-2.76,-13.81]],"v":[[-50,25],[50,25]],"c":false}]},{"i":{"x":0,"y":0},"o":{"x":0,"y":0},"n":"0,0,0,0","t":5,"s":[{"i":[[0,0],[0,0]],"o":[[0,0],[0,0]],"v":[[-50,0],[-50,0]],"c":true}]}]}},{"ty":"fl","c":{"a":0,"k":[0,0,0,1],"ix":4},"o":{"a":0,"k":100,"ix":5},"r":1}],"hd":false}]}],"hd":false}]}],"markers":[]}');
+window.nextOnboardingStep = (step) => {
+const currentStepDiv = document.getElementById(`onboarding-step-${step}`);
+const nextStepDiv = document.getElementById(`onboarding-step-${step + 1}`);
 
-function setupAvatar() {
-const mouthContainer = document.getElementById('lottie-mouth-container');
-if (!mouthContainer) return;
-mouthAnimation = lottie.loadAnimation({
-container: mouthContainer,
-renderer: 'svg',
-loop: true,
-autoplay: false,
-animationData: mouthAnimationData
-});
-}
-
-beginBtn.addEventListener('click', () => {
-document.getElementById('onboarding-step-1').classList.add('hidden-step');
-document.getElementById('onboarding-step-2').classList.remove('hidden-step');
-});
-
-jurisdictionNextBtn.addEventListener('click', () => {
+if (step === 2) {
 const country = countryInput.value.trim();
 if (!country) {
 alert("Please enter a country to set your jurisdiction.");
@@ -164,27 +167,27 @@ return;
 }
 currentJurisdiction = country;
 jurisdictionDisplay.textContent = currentJurisdiction;
-document.getElementById('onboarding-step-2').classList.add('hidden-step');
-document.getElementById('onboarding-step-3').classList.remove('hidden-step');
-});
+}
 
-finishOnboardingBtn.addEventListener('click', () => {
+currentStepDiv.classList.add('hidden-step');
+nextStepDiv.classList.remove('hidden-step');
+};
+
+window.finishOnboarding = () => {
 onboardingModal.style.opacity = '0';
 setTimeout(() => {
 onboardingModal.classList.add('hidden');
 appScreen.classList.remove('hidden');
 addMessageToLog('system', `Jurisdiction set to ${currentJurisdiction}. You can now ask questions.`);
-setupAvatar();
 }, 300);
-});
+};
 
 changeJurisdictionBtn.addEventListener('click', () => {
-const newJurisdiction = prompt("Enter new jurisdiction:", currentJurisdiction);
+const newJurisdiction = prompt("Enter a new country or jurisdiction:", currentJurisdiction);
 if (newJurisdiction && newJurisdiction.trim() !== "") {
 currentJurisdiction = newJurisdiction.trim();
 jurisdictionDisplay.textContent = currentJurisdiction;
 addMessageToLog('system', `Jurisdiction changed to ${currentJurisdiction}.`);
-chatHistory = [];
 }
 });
 
@@ -196,14 +199,16 @@ if (!userInput) return;
 addMessageToLog('user', userInput);
 chatInput.value = '';
 chatInput.style.height = 'auto';
+
 setStatus('thinking');
 
 try {
 const prompt = `As a legal AI assistant for ${currentJurisdiction}, answer the following. Keep it informative but not overly long. End with the short disclaimer: "AI response. Not legal advice."\n\nUser query: "${userInput}"`;
+
 chatHistory.push({ role: "user", parts: [{ text: prompt }] });
 
 const payload = { contents: chatHistory };
-const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`;
+const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`;
 
 const response = await fetch(apiUrl, {
 method: 'POST',
@@ -212,26 +217,26 @@ body: JSON.stringify(payload)
 });
 
 if (!response.ok) {
-const errorBody = await response.json();
-throw new Error(`API error: ${errorBody.error.message}`);
+const errorBody = await response.text();
+throw new Error(`API request failed with status ${response.status}: ${errorBody}`);
 }
 
 const result = await response.json();
 
-if (result.candidates && result.candidates[0].content.parts.length > 0) {
+if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts.length > 0) {
 const aiResponse = result.candidates[0].content.parts[0].text;
 chatHistory.push({ role: "model", parts: [{ text: aiResponse }] });
 addMessageToLog('ai', aiResponse);
 speak(aiResponse);
 } else {
-const blockReason = result.promptFeedback?.blockReason || 'an unknown reason';
-const emptyResponseText = `I am unable to provide a response, possibly due to safety settings (${blockReason}).`;
+const emptyResponseText = "I am unable to provide a response to that query. Please try a different question.";
 addMessageToLog('ai', emptyResponseText);
 speak(emptyResponseText);
 }
+
 } catch (error) {
-console.error("API Error:", error);
-const errorMessageText = "Sorry, an error occurred. Please try again.";
+console.error("Gemini API Error:", error);
+const errorMessageText = "I'm sorry, I encountered an error while processing your request. Please try again later.";
 addMessageToLog('ai', errorMessageText);
 showError(error.message);
 setStatus('ready');
@@ -241,6 +246,7 @@ setStatus('ready');
 function addMessageToLog(sender, text) {
 const messageDiv = document.createElement('div');
 const bubble = document.createElement('div');
+
 if (sender === 'system') {
 messageDiv.className = 'flex justify-center';
 bubble.className = 'chat-bubble-system';
@@ -248,6 +254,7 @@ bubble.className = 'chat-bubble-system';
 messageDiv.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
 bubble.className = `chat-bubble ${sender === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'}`;
 }
+
 bubble.innerHTML = text.replace(/\n/g, '<br>');
 messageDiv.appendChild(bubble);
 chatLog.appendChild(messageDiv);
@@ -255,31 +262,20 @@ chatLog.scrollTop = chatLog.scrollHeight;
 }
 
 function speak(text) {
-if (!('speechSynthesis' in window) || !mouthAnimation) {
-if(!mouthAnimation) console.error("Mouth animation not initialized.");
+if (!('speechSynthesis' in window)) {
+console.warn("Speech Synthesis not supported.");
 setStatus('ready');
 return;
 }
-window.speechSynthesis.cancel();
-
 const utterance = new SpeechSynthesisUtterance(text);
-
-utterance.onstart = () => {
-setStatus('speaking');
-mouthAnimation.play();
-};
-
-utterance.onend = () => {
-setStatus('ready');
-mouthAnimation.stop();
-};
-
+utterance.onstart = () => { setStatus('speaking'); avatarMouth.classList.add('talking'); };
+utterance.onend = () => { setStatus('ready'); avatarMouth.classList.remove('talking'); };
 utterance.onerror = (e) => {
 console.error('Speech synthesis error:', e.error);
 setStatus('ready');
-mouthAnimation.stop();
+avatarMouth.classList.remove('talking');
 };
-
+window.speechSynthesis.cancel();
 window.speechSynthesis.speak(utterance);
 }
 
@@ -321,10 +317,6 @@ chatInput.style.overflowY = 'hidden';
 chatInput.style.height = scrollHeight + 'px';
 }
 });
-
-// **FIX 3**: Added a console log to confirm the script runs.
-console.log("D.O.R.I.A.N. script loaded successfully.");
-
 </script>
 </body>
 </html>
