@@ -60,22 +60,18 @@ animation: talk 0.3s infinite;
 
 <div id="app-container" class="w-full h-screen max-w-7xl mx-auto flex flex-col">
 
-<!-- Onboarding Modal -->
 <div id="onboarding-modal" class="absolute inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center p-4">
 <div class="relative max-w-lg w-full">
-<!-- Step 1: Welcome -->
 <div id="onboarding-step-1" class="onboarding-step text-center p-8 bg-gray-900 rounded-2xl shadow-2xl">
 <div class="w-full h-40 bg-gray-700 rounded-lg mb-6 overflow-hidden">
 <img src="https://placehold.co/600x300/000000/FFFFFF?text=D.O.R.I.A.N." alt="DORIAN Placeholder" class="w-full h-full object-cover">
 </div>
 <h1 class="text-4xl md:text-5xl font-bold text-white mb-4">D.O.R.I.A.N.</h1>
 <p class="text-lg text-gray-300 mb-2">Your AI-Powered Legal Information Assistant</p>
-<!-- Contributor Credit Added -->
 <p class="text-sm text-gray-500 mb-6">by Jay Irungu</p>
 <button onclick="nextOnboardingStep(1)" class="bg-white text-black font-bold py-3 px-8 rounded-lg transition-colors hover:bg-gray-200 w-full">Begin</button>
 </div>
 
-<!-- Step 2: Ask for Country -->
 <div id="onboarding-step-2" class="onboarding-step hidden-step text-center p-8 bg-gray-900 rounded-2xl shadow-2xl">
 <h2 class="text-2xl md:text-3xl font-bold text-white mb-4">Set Your Jurisdiction</h2>
 <p class="text-gray-300 mb-6">To provide relevant information, please tell me which country's laws you are interested in.</p>
@@ -83,7 +79,6 @@ animation: talk 0.3s infinite;
 <button onclick="nextOnboardingStep(2)" class="bg-white text-black font-bold py-3 px-8 rounded-lg transition-colors hover:bg-gray-200 w-full">Next</button>
 </div>
 
-<!-- Step 3: Disclaimer -->
 <div id="onboarding-step-3" class="onboarding-step hidden-step text-center p-8 bg-gray-900 rounded-2xl shadow-2xl">
 <h2 class="text-2xl md:text-3xl font-bold text-white mb-4">Final Step: Disclaimer</h2>
 <p class="text-sm text-gray-400 mb-6 p-4 bg-gray-800 rounded-lg">Remember, I am an AI, not a substitute for a qualified lawyer. My responses are for informational purposes only and do not constitute legal advice.</p>
@@ -92,7 +87,6 @@ animation: talk 0.3s infinite;
 </div>
 </div>
 
-<!-- Main App Screen -->
 <div id="app-screen" class="hidden w-full h-full flex flex-col md:flex-row p-2 md:p-4 gap-4">
 <div class="w-full md:w-1/3 lg:w-1/4 bg-gray-900 rounded-2xl p-6 flex flex-col items-center justify-center shadow-lg">
 <div class="w-full text-center">
@@ -137,7 +131,10 @@ animation: talk 0.3s infinite;
 </div>
 
 <script type="module">
-const geminiApiKey = "";
+// --- START OF CHANGES ---
+// 1. Inserted the new Gemini API Key
+const geminiApiKey = "AIzaSyBTjCw0E5fJwFdDxP1sJvxBnPygEU3Npkw";
+// --- END OF CHANGES ---
 
 const onboardingModal = document.getElementById('onboarding-modal');
 const appScreen = document.getElementById('app-screen');
@@ -188,6 +185,8 @@ if (newJurisdiction && newJurisdiction.trim() !== "") {
 currentJurisdiction = newJurisdiction.trim();
 jurisdictionDisplay.textContent = currentJurisdiction;
 addMessageToLog('system', `Jurisdiction changed to ${currentJurisdiction}.`);
+// Resetting chat history after changing jurisdiction
+chatHistory = [];
 }
 });
 
@@ -203,12 +202,14 @@ chatInput.style.height = 'auto';
 setStatus('thinking');
 
 try {
+// The prompt now includes the system instruction with every user query.
 const prompt = `As a legal AI assistant for ${currentJurisdiction}, answer the following. Keep it informative but not overly long. End with the short disclaimer: "AI response. Not legal advice."\n\nUser query: "${userInput}"`;
 
 chatHistory.push({ role: "user", parts: [{ text: prompt }] });
 
 const payload = { contents: chatHistory };
-const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`;
+// The API URL uses the Gemini model and the provided API key.
+const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`;
 
 const response = await fetch(apiUrl, {
 method: 'POST',
@@ -217,8 +218,8 @@ body: JSON.stringify(payload)
 });
 
 if (!response.ok) {
-const errorBody = await response.text();
-throw new Error(`API request failed with status ${response.status}: ${errorBody}`);
+const errorBody = await response.json();
+throw new Error(`API request failed: ${errorBody.error.message}`);
 }
 
 const result = await response.json();
@@ -229,7 +230,9 @@ chatHistory.push({ role: "model", parts: [{ text: aiResponse }] });
 addMessageToLog('ai', aiResponse);
 speak(aiResponse);
 } else {
-const emptyResponseText = "I am unable to provide a response to that query. Please try a different question.";
+// Handle cases where the API returns no candidates (e.g., safety blocks)
+const blockReason = result.promptFeedback?.blockReason || 'an unknown reason';
+const emptyResponseText = `I am unable to provide a response to that query, possibly due to safety settings (${blockReason}). Please try a different question.`;
 addMessageToLog('ai', emptyResponseText);
 speak(emptyResponseText);
 }
@@ -239,6 +242,7 @@ console.error("Gemini API Error:", error);
 const errorMessageText = "I'm sorry, I encountered an error while processing your request. Please try again later.";
 addMessageToLog('ai', errorMessageText);
 showError(error.message);
+} finally {
 setStatus('ready');
 }
 });
