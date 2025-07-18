@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DORIAN - AI Legal Assistant</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+/* Professional Dark Mode Color Palette */
+--bg-start: #1a202c; /* Dark Charcoal */
+--bg-end: #2d3748; /* Slate Gray */
+--primary-text: #e2e8f0; /* Light Gray / Off-white */
+--secondary-text: #a0aec0; /* Medium Gray */
+--accent-color: #f6ad55; /* Amber/Gold */
+--suggestion-bg: rgba(74, 85, 104, 0.5); /* Semi-transparent Slate */
+--input-bg: rgba(45, 55, 72, 0.8);
+}
+
+body {
+font-family: 'Inter', sans-serif;
+background: radial-gradient(circle at 50% 0%, var(--bg-start) 0%, var(--bg-end) 90%);
+color: var(--primary-text);
+}
+
+#app-container {
+height: 100vh;
+background-color: rgba(26, 32, 44, 0.6);
+backdrop-filter: blur(30px);
+border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@media (min-width: 768px) {
+#app-container {
+max-width: 420px;
+height: 85vh;
+max-height: 800px;
+border-radius: 2.5rem;
+box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+}
+}
+
+.dorian-icon {
+width: 90px;
+height: 90px;
+color: var(--accent-color);
+}
+
+.prompt-button {
+background-color: var(--suggestion-bg);
+border: 1px solid rgba(255, 255, 255, 0.1);
+transition: all 0.2s ease-in-out;
+}
+.prompt-button:hover {
+transform: translateY(-2px);
+box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+background-color: rgba(94, 112, 142, 0.5);
+}
+
+.chat-bubble {
+max-width: 85%;
+padding: 12px 18px;
+border-radius: 20px;
+word-wrap: break-word;
+animation: fadeIn 0.3s ease-out;
+}
+.chat-bubble-user {
+background-color: #4299e1;
+color: #ffffff;
+border-bottom-right-radius: 8px;
+}
+.chat-bubble-ai {
+background-color: #4a5568;
+color: #e2e8f0;
+border-bottom-left-radius: 8px;
+}
+
+@keyframes fadeIn {
+from { opacity: 0; transform: translateY(10px); }
+to { opacity: 1; transform: translateY(0); }
+}
+
+.custom-scrollbar::-webkit-scrollbar { width: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #4a5568; border-radius: 3px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #718096; }
+
+.onboarding-step {
+transition: opacity 0.6s ease-in-out, transform 0.6s ease-in-out;
+}
+.hidden-step {
+opacity: 0;
+transform: translateY(30px);
+position: absolute;
+pointer-events: none;
+visibility: hidden;
+}
+#country-select {
+background-color: #2d3748;
+border-color: #4a5568;
+color: #e2e8f0;
+}
+#country-select:focus {
+outline: none;
+border-color: var(--accent-color);
+box-shadow: 0 0 0 2px var(--accent-color);
+}
+</style>
+</head>
+<body class="w-screen h-screen overflow-hidden">
+
+<div id="onboarding-modal" class="absolute inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center p-4">
+<div class="relative max-w-lg w-full">
+<!-- Step 1: Welcome -->
+<div id="onboarding-step-1" class="onboarding-step text-center p-6 md:p-8 bg-gray-900 rounded-3xl shadow-2xl">
+<h1 class="text-4xl md:text-5xl font-extrabold text-white mb-3 md:mb-4 tracking-tight">Welcome to DORIAN</h1>
+<p class="text-lg md:text-xl text-blue-200 mb-6 font-light">Your AI Legal Information Assistant</p>
+<button onclick="nextOnboardingStep(1)" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-full hover:bg-blue-700 w-full text-lg transition-colors">Begin</button>
+</div>
+<!-- Step 2: Country Selection -->
+<div id="onboarding-step-2" class="onboarding-step hidden hidden-step text-center p-6 md:p-8 bg-gray-900 rounded-3xl shadow-2xl">
+<h2 class="text-2xl md:text-3xl font-bold text-white mb-4">Select Your Jurisdiction</h2>
+<p class="text-md text-gray-400 mb-6">DORIAN will tailor its responses based on the constitutional laws of the country you select.</p>
+<select id="country-select" class="w-full p-3 rounded-lg text-lg mb-6">
+</select>
+<button onclick="nextOnboardingStep(2)" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-full hover:bg-blue-700 w-full text-lg transition-colors">Next</button>
+</div>
+<!-- Step 3: Disclaimer -->
+<div id="onboarding-step-3" class="onboarding-step hidden hidden-step text-center p-6 md:p-8 bg-gray-900 rounded-3xl shadow-2xl">
+<h2 class="text-2xl md:text-3xl font-bold text-white mb-4">Crucial Disclaimer</h2>
+<p class="text-sm md:text-md text-amber-200 mb-6 p-4 bg-gray-800 rounded-lg border border-amber-500 leading-relaxed">
+DORIAN is an AI and <strong>NOT a lawyer</strong>. Information provided is for educational purposes and is <strong>not legal advice</strong>. Always consult a qualified human attorney for any legal matters.
+</p>
+<button onclick="finishOnboarding()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full w-full text-lg transition-colors">I Understand & Agree</button>
+</div>
+</div>
+</div>
+
+<div id="app-wrapper" class="flex justify-center items-center w-full h-full p-0 md:p-4">
+<main id="app-container" class="relative w-full flex flex-col transition-all duration-300">
+
+<header id="app-header" class="flex justify-between items-center p-5 z-10">
+<div class="flex items-center gap-2">
+<svg class="w-6 h-6 text-gray-300" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19.471 6.63437C19.3875 6.55167 19.2905 6.48398 19.1844 6.43437C18.9438 6.32187 18.675 6.26562 18.4 6.26562H12.6V4.31562C12.6 3.36562 11.8312 2.59687 10.8812 2.59687H6C4.9 2.59687 4 3.49687 4 4.59687V19.3969C4 20.4969 4.9 21.3969 6 21.3969H18C19.1 21.3969 20 20.4969 20 19.3969V8.26562C20 7.61562 19.8031 7.02812 19.471 6.63437ZM18 20H6C5.6 20 5.4 19.8 5.4 19.4V4.6C5.4 4.2 5.6 4 6 4H10.9V8.2C10.9 9.2 11.7 10 12.7 10H18.6C18.8 10 19 9.8 19 9.6V19.4C18.8 19.8 18.6 20 18 20Z" fill="currentColor"/></svg>
+<h1 class="font-bold text-lg text-gray-200">DORIAN</h1>
+</div>
+<div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center font-bold text-gray-300 text-sm">U</div>
+</header>
+
+<div id="welcome-screen" class="flex flex-col items-center justify-center text-center p-6 flex-grow">
+<svg class="dorian-icon mb-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+<path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c1.355 0 2.707-.157 4.008-.452M12 21c-1.355 0-2.707-.157-4.008-.452m8.016-6.295A9.006 9.006 0 0012 3c-1.355 0-2.707.157-4.008.452m8.016 6.295c.376.82.645 1.688.826 2.583m-9.668-2.583a9.006 9.006 0 01-2.008-3.73M12 3c-1.921 0-3.76.36-5.462 1.026M12 3c1.921 0 3.76.36 5.462 1.026m-10.924 2.052a9.004 9.004 0 018.892 0M12 15a3 3 0 100-6 3 3 0 000 6z" />
+</svg>
+<h2 class="text-2xl font-bold mb-3" style="color: var(--primary-text);">Welcome to DORIAN.</h2>
+<p class="text-base font-normal max-w-xs" style="color: var(--secondary-text);">
+How may I assist you with legal information today?
+</p>
+<div class="grid grid-cols-2 gap-3 mt-8 w-full max-w-sm">
+<button class="prompt-button p-3 rounded-xl text-sm font-medium text-left" style="color: var(--primary-text);">Explain 'due process'</button>
+<button class="prompt-button p-3 rounded-xl text-sm font-medium text-left" style="color: var(--primary-text);">Summarize contract law basics</button>
+</div>
+</div>
+
+<div id="chat-screen" class="hidden flex-col flex-grow overflow-hidden">
+<div id="chat-log" class="flex-1 p-6 space-y-4 overflow-y-auto custom-scrollbar">
+</div>
+</div>
+
+<footer id="input-area" class="p-4 mt-auto z-10">
+<form id="chat-form" class="relative flex items-center">
+<textarea id="chat-input" class="w-full bg-[var(--input-bg)] text-gray-200 rounded-2xl p-4 pr-12 resize-none border border-gray-600 focus:outline-none focus:ring-2 focus:ring-amber-500 placeholder-gray-400" placeholder="Ask a legal question..." rows="1" required></textarea>
+<button type="submit" class="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-amber-500 text-white hover:bg-amber-600 transition-colors">
+<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+<path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+</svg>
+</button>
+</form>
+<p class="text-center text-xs text-gray-500 mt-2">DORIAN is an AI. Information may be inaccurate. Verify with a qualified professional.</p>
+</footer>
+</main>
+</div>
+
+<script>
+// --- Gemini API Key ---
+const geminiApiKey = "YOUR_GEMINI_API_KEY"; // IMPORTANT: Replace with your actual Gemini API key
+
+// --- Element References ---
+const onboardingModal = document.getElementById('onboarding-modal');
+const countrySelect = document.getElementById('country-select');
+const welcomeScreen = document.getElementById('welcome-screen');
+const chatScreen = document.getElementById('chat-screen');
+const chatLog = document.getElementById('chat-log');
+const chatForm = document.getElementById('chat-form');
+const chatInput = document.getElementById('chat-input');
+const promptButtons = document.querySelectorAll('.prompt-button');
+
+let chatHistory = [];
+let isFirstMessage = true;
+let selectedCountry = 'United States';
+
+const countries = [
+"United States", "United Kingdom", "Canada", "Australia", "New Zealand",
+"India", "South Africa", "Nigeria", "Germany", "France", "Spain", "Italy",
+"Japan", "Brazil", "Mexico", "Argentina", "China", "Russia", "Other"
+];
+
+function populateCountries() {
+countries.forEach(country => {
+const option = document.createElement('option');
+option.value = country;
+option.textContent = country;
+countrySelect.appendChild(option);
+});
+}
+
+// --- Onboarding Logic ---
+window.nextOnboardingStep = (step) => {
+if (step === 2) {
+selectedCountry = countrySelect.value;
+}
+const currentStepDiv = document.getElementById(`onboarding-step-${step}`);
+const nextStepDiv = document.getElementById(`onboarding-step-${step + 1}`);
+
+currentStepDiv.classList.add('hidden-step');
+setTimeout(() => {
+currentStepDiv.classList.add('hidden');
+if (nextStepDiv) {
+nextStepDiv.classList.remove('hidden');
+setTimeout(() => nextStepDiv.classList.remove('hidden-step'), 50);
+}
+}, 600);
+};
+
+window.finishOnboarding = () => {
+onboardingModal.style.opacity = '0';
+setTimeout(() => {
+onboardingModal.classList.add('hidden');
+}, 300);
+};
+
+// --- Main Chat Logic ---
+async function handleChatSubmit(event) {
+if(event) event.preventDefault();
+if (geminiApiKey === "YOUR_GEMINI_API_KEY") {
+alert("Please replace 'YOUR_GEMINI_API_KEY' in the script with your actual Google Gemini API key.");
+return;
+}
+const userInput = chatInput.value.trim();
+if (!userInput) return;
+
+if (isFirstMessage) {
+welcomeScreen.classList.add('hidden');
+chatScreen.classList.remove('hidden');
+chatScreen.classList.add('flex');
+
+// ** UPDATED SYSTEM PROMPT **
+const systemPrompt = `You are DORIAN, an AI legal information assistant. If asked what your name is, you must respond that your name is DORIAN. Your user is from ${selectedCountry}. All of your responses must be strictly based on the constitutional laws and legal framework of ${selectedCountry}. At the end of every response, you MUST include this exact disclaimer: "Disclaimer: I am an AI assistant and not a lawyer. This information is for educational purposes only. Consult with a qualified legal professional for advice on your specific situation." Do not add any other pleasantries or conversation after the disclaimer.`;
+
+chatHistory.push({ role: "user", parts: [{ text: systemPrompt }] });
+chatHistory.push({ role: "model", parts: [{ text: `Understood. I will now act as DORIAN, providing legal information based on the laws of ${selectedCountry}, and will include the required disclaimer.` }] });
+
+isFirstMessage = false;
+}
+
+addMessageToLog('user', userInput);
+chatInput.value = '';
+autoResizeTextarea();
+
+const thinkingBubble = addMessageToLog('ai', '<span class="thinking-dots"><span>.</span><span>.</span><span>.</span></span>', true);
+
+try {
+chatHistory.push({ role: "user", parts: [{ text: userInput }] });
+const payload = { contents: chatHistory };
+const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`;
+
+const response = await fetch(apiUrl, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify(payload)
+});
+
+if (!response.ok) {
+const errorBody = await response.json();
+throw new Error(errorBody.error.message || 'API request failed');
+}
+
+const result = await response.json();
+let aiResponse = "Sorry, I couldn't generate a response. Please try again.";
+if (result.candidates && result.candidates[0].content && result.candidates[0].content.parts.length > 0) {
+aiResponse = result.candidates[0].content.parts[0].text;
+}
+
+thinkingBubble.innerHTML = aiResponse.replace(/\n/g, '<br>');
+chatHistory.push({ role: "model", parts: [{ text: aiResponse }] });
+chatLog.scrollTop = chatLog.scrollHeight;
+
+} catch (error) {
+console.error("Gemini API Error:", error);
+thinkingBubble.innerHTML = `Error: ${error.message}`;
+thinkingBubble.style.backgroundColor = '#f56565';
+thinkingBubble.style.color = '#fff';
+}
+}
+
+// --- Event Listeners & Initializers ---
+document.addEventListener('DOMContentLoaded', () => {
+populateCountries();
+chatForm.addEventListener('submit', handleChatSubmit);
+chatInput.addEventListener('input', autoResizeTextarea);
+
+// ** ADDED: Click handler for welcome screen prompt buttons **
+promptButtons.forEach(button => {
+button.addEventListener('click', () => {
+chatInput.value = button.textContent;
+handleChatSubmit();
+});
+});
+});
+
+function addMessageToLog(sender, text, isThinking = false) {
+const messageDiv = document.createElement('div');
+const bubble = document.createElement('div');
+messageDiv.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
+bubble.className = `chat-bubble ${sender === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'}`;
+if (isThinking) bubble.classList.add('thinking-bubble');
+bubble.innerHTML = text.replace(/\n/g, '<br>');
+messageDiv.appendChild(bubble);
+chatLog.appendChild(messageDiv);
+chatLog.scrollTop = chatLog.scrollHeight;
+return bubble;
+}
+
+function autoResizeTextarea() {
+chatInput.style.height = 'auto';
+const scrollHeight = chatInput.scrollHeight;
+const maxHeight = 120;
+if (scrollHeight > maxHeight) {
+chatInput.style.overflowY = 'auto';
+chatInput.style.height = maxHeight + 'px';
+} else {
+chatInput.style.overflowY = 'hidden';
+chatInput.style.height = scrollHeight + 'px';
+}
+}
+
+const style = document.createElement('style');
+style.innerHTML = `
+.thinking-dots span {
+animation: blink 1.4s infinite both;
+font-size: 1.5rem;
+font-weight: bold;
+color: var(--secondary-text);
+}
+.thinking-dots span:nth-child(2) { animation-delay: .2s; }
+.thinking-dots span:nth-child(3) { animation-delay: .4s; }
+@keyframes blink { 0%, 80%, 100% { opacity: 0; } 40% { opacity: 1; } }
+.chat-bubble-ai .thinking-bubble { background-color: transparent !important; }
+`;
+document.head.appendChild(style);
+</script>
+
+</body>
+</html>
