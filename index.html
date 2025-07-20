@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>D.O.R.I.A.N - AI Legal Assistant</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script> <!-- For rendering markdown -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+    body { font-family: 'Inter', sans-serif; background-color: #000; }
+    .chat-bubble { max-width: 80%; padding: 12px 18px; border-radius: 18px; line-height: 1.5; word-wrap: break-word; }
+    .chat-bubble-user { background-color: #E5E7EB; color: #111827; border-bottom-right-radius: 6px; }
+    .chat-bubble-ai { background-color: #1F2937; color: #F9FAFB; border-bottom-left-radius: 6px; }
+    .chat-bubble-system { font-style: italic; text-align: center; width: 100%; max-width: 100%; background-color: transparent; color: #6B7280; border-radius: 8px; padding: 6px 12px; }
+    .onboarding-step { transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out; }
+    .hidden-step { opacity: 0; transform: translateY(20px); position: absolute; pointer-events: none; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #111827; }
+    ::-webkit-scrollbar-thumb { background: #4B5563; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #6B7280; }
+    .tab-active { background-color: #ffffff; color: #000000; }
+    .tab-inactive { background-color: #1F2937; color: #9CA3AF; }
+    #analysis-result h2 { font-size: 1.25rem; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; }
+    #analysis-result h3 { font-size: 1.1rem; font-weight: 600; margin-top: 0.8rem; margin-bottom: 0.4rem; }
+    #analysis-result ul { list-style-type: disc; padding-left: 1.5rem; }
+    #analysis-result ol { list-style-type: decimal; padding-left: 1.5rem; }
+    #analysis-result p { margin-bottom: 0.75rem; }
+    #analysis-result strong, #analysis-result b { font-weight: 600; }
+</style>
+</head>
+<body class="text-white">
+
+<div id="app-container" class="w-full h-screen max-w-7xl mx-auto flex flex-col">
+
+    <!-- ONBOARDING MODAL -->
+    <div id="onboarding-modal" class="absolute inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center p-4">
+        <div class="relative max-w-lg w-full">
+            <div id="onboarding-step-1" class="onboarding-step text-center p-8 bg-gray-900 border border-gray-700 rounded-2xl">
+                <h1 class="text-5xl md:text-6xl font-extrabold text-white mb-4 tracking-tight">D.O.R.I.A.N.</h1>
+                <p class="text-xl text-gray-300 mb-2 font-light">Your AI-Powered Legal Information Assistant</p>
+                <p class="text-sm text-gray-500 mb-6 font-thin">by Jay Irungu</p>
+                <button onclick="nextOnboardingStep(1)" class="bg-white text-black font-bold py-3 px-8 rounded-full transition-all duration-300 hover:bg-gray-200 w-full text-lg">Begin Your Legal Journey</button>
+            </div>
+            <div id="onboarding-step-2" class="onboarding-step hidden-step text-center p-8 bg-gray-900 border border-gray-700 rounded-2xl">
+                <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Set Your Jurisdiction</h2>
+                <p class="text-gray-300 mb-6 text-lg">Specify the country or region for relevant legal insights.</p>
+                <input type="text" id="jurisdiction-onboarding-input" placeholder="e.g., Canada, European Union, Kenya" class="w-full bg-gray-800 text-white p-4 rounded-xl mb-6 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-white placeholder-gray-500">
+                <button onclick="nextOnboardingStep(2)" class="bg-white text-black font-bold py-3 px-8 rounded-full transition-all duration-300 hover:bg-gray-200 w-full text-lg">Proceed</button>
+            </div>
+            <div id="onboarding-step-3" class="onboarding-step hidden-step text-center p-8 bg-gray-900 border border-gray-700 rounded-2xl">
+                <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Important Disclaimer</h2>
+                <p class="text-md text-gray-300 mb-6 p-4 bg-gray-800 rounded-lg border border-gray-600 leading-relaxed">
+                    D.O.R.I.A.N. provides general legal information for educational purposes only. It is <strong class="text-red-400">not a substitute for professional legal advice.</strong> Always consult with a qualified attorney.
+                </p>
+                <button onclick="finishOnboarding()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full transition-all duration-300 w-full text-lg">I Understand & Begin</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP SCREEN -->
+    <div id="app-screen" class="hidden w-full h-full flex flex-col md:flex-row p-2 md:p-4 gap-4">
+        <!-- Left Panel -->
+        <div class="flex-shrink-0 w-full md:w-1/3 lg:w-1/4 bg-gray-900 rounded-2xl p-6 flex flex-col justify-between border border-gray-800">
+            <div>
+                <h2 class="text-4xl font-extrabold text-white mb-6 text-center md:text-left">D.O.R.I.A.N.</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-sm font-medium text-gray-400">Status</label>
+                        <p id="status-text" class="text-green-400 font-bold tracking-wide">Ready</p>
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-gray-400">Jurisdiction</label>
+                        <p id="jurisdiction-display" class="font-bold text-white"></p>
+                    </div>
+                    <button id="change-jurisdiction-btn" class="w-full text-sm bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 mt-2">Change Jurisdiction</button>
+                </div>
+            </div>
+            <p class="text-sm text-gray-600 text-center mt-6">Version 2.0.0</p>
+        </div>
+
+        <!-- Right Panel (Main Content) -->
+        <div class="w-full md:w-2/3 lg:w-3/4 bg-gray-900 rounded-2xl flex flex-col border border-gray-800">
+            <!-- Tab Navigation -->
+            <div class="flex border-b border-gray-700 p-2 bg-gray-800 rounded-t-2xl">
+                <button id="tab-chat" class="flex-1 py-2 px-4 rounded-md text-sm font-semibold transition-all duration-200 tab-active">Chat</button>
+                <button id="tab-analyzer" class="flex-1 py-2 px-4 rounded-md text-sm font-semibold transition-all duration-200 tab-inactive">Document Analyzer</button>
+            </div>
+
+            <!-- Chat Panel -->
+            <div id="chat-panel" class="flex flex-col flex-1 h-0">
+                <div id="chat-log" class="flex-1 p-4 overflow-y-auto space-y-5"></div>
+                <div class="p-4 border-t border-gray-700 bg-gray-800 rounded-b-2xl">
+                    <form id="chat-form" class="flex items-center gap-3">
+                        <textarea id="chat-input" class="flex-1 bg-gray-700 text-gray-100 rounded-xl p-3 resize-none focus:outline-none focus:ring-2 focus:ring-white border border-gray-600 placeholder-gray-400 text-base" placeholder="Ask a legal question..." rows="1" required></textarea>
+                        <button type="submit" class="bg-white hover:bg-gray-200 text-black p-3 rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"></path></svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Document Analyzer Panel -->
+            <div id="analyzer-panel" class="hidden flex-col flex-1 h-0 p-6 overflow-y-auto">
+                <div class="disclaimer-box bg-gray-800 border border-gray-600 rounded-lg p-4 mb-6">
+                    <h3 class="font-bold text-lg text-white mb-2">Disclaimer & Instructions</h3>
+                    <p class="text-sm text-gray-400 mb-4">
+                        This AI analysis is for informational purposes only and is not legal advice. For an accurate analysis, please ensure your document is clear and machine-readable (e.g., not a handwritten scan).
+                    </p>
+                    <label class="flex items-center gap-2 text-sm text-gray-300">
+                        <input type="checkbox" id="disclaimer-checkbox" class="h-4 w-4 bg-gray-700 border-gray-500 rounded text-white focus:ring-white">
+                        I understand and agree to the disclaimer.
+                    </label>
+                </div>
+
+                <form id="document-form">
+                    <fieldset id="upload-fieldset" disabled class="space-y-4">
+                        <div>
+                            <label for="analyzer-country-input" class="block text-sm font-medium text-gray-300 mb-1">Country for Legal Context</label>
+                            <input type="text" id="analyzer-country-input" placeholder="e.g., United States, Canada" required class="w-full bg-gray-800 text-white p-3 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-white placeholder-gray-500">
+                        </div>
+                        <div>
+                            <label for="file-upload" class="block text-sm font-medium text-gray-300 mb-1">Upload Document (.pdf, .txt)</label>
+                            <input type="file" id="file-upload" accept=".pdf,.txt" required class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-white file:text-black hover:file:bg-gray-200">
+                        </div>
+                        <button type="submit" class="w-full bg-white text-black font-bold py-3 px-6 rounded-lg transition-all duration-300 hover:bg-gray-200 text-base">Analyze Document</button>
+                    </fieldset>
+                </form>
+
+                <div id="analysis-container" class="mt-8">
+                    <h3 class="text-xl font-bold text-white border-b border-gray-700 pb-2 mb-4">Analysis</h3>
+                    <div id="loader" class="hidden text-center py-10">
+                        <div role="status" class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-white border-r-transparent align-[-0.125em]"></div>
+                        <p class="mt-4 text-gray-400">Analyzing document... This may take a moment.</p>
+                    </div>
+                    <div id="analysis-result" class="text-gray-300 leading-relaxed">
+                        <p class="text-gray-500">Your document analysis will appear here.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    // --- API ENDPOINT ---
+    // !!! IMPORTANT !!! Replace this with your actual Netlify function URL
+    const API_URL = "https://your-site-name.netlify.app/.netlify/functions/api";
+
+    // --- ELEMENT SELECTORS ---
+    const onboardingModal = document.getElementById('onboarding-modal');
+    const appScreen = document.getElementById('app-screen');
+    const jurisdictionOnboardingInput = document.getElementById('jurisdiction-onboarding-input');
+    const jurisdictionDisplay = document.getElementById('jurisdiction-display');
+    const changeJurisdictionBtn = document.getElementById('change-jurisdiction-btn');
+    const statusText = document.getElementById('status-text');
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-input');
+    const chatLog = document.getElementById('chat-log');
+    const tabChat = document.getElementById('tab-chat');
+    const tabAnalyzer = document.getElementById('tab-analyzer');
+    const chatPanel = document.getElementById('chat-panel');
+    const analyzerPanel = document.getElementById('analyzer-panel');
+    const disclaimerCheckbox = document.getElementById('disclaimer-checkbox');
+    const uploadFieldset = document.getElementById('upload-fieldset');
+    const documentForm = document.getElementById('document-form');
+    const analyzerCountryInput = document.getElementById('analyzer-country-input');
+    const fileUpload = document.getElementById('file-upload');
+    const analysisResultDiv = document.getElementById('analysis-result');
+    const loader = document.getElementById('loader');
+
+    // --- STATE ---
+    let chatHistory = [];
+    let currentJurisdiction = "General";
+
+    // --- ONBOARDING LOGIC ---
+    window.nextOnboardingStep = (step) => {
+        const currentStepDiv = document.getElementById(`onboarding-step-${step}`);
+        const nextStepDiv = document.getElementById(`onboarding-step-${step + 1}`);
+
+        if (step === 2) {
+            const country = jurisdictionOnboardingInput.value.trim();
+            if (!country) {
+                alert("Please enter a country to set your jurisdiction.");
+                return;
+            }
+            currentJurisdiction = country;
+            jurisdictionDisplay.textContent = currentJurisdiction;
+            analyzerCountryInput.value = currentJurisdiction; // Pre-fill analyzer country
+        }
+
+        currentStepDiv.classList.add('hidden-step');
+        setTimeout(() => {
+            currentStepDiv.classList.add('hidden');
+            nextStepDiv.classList.remove('hidden', 'hidden-step');
+        }, 500);
+    };
+
+    window.finishOnboarding = () => {
+        onboardingModal.style.opacity = '0';
+        setTimeout(() => {
+            onboardingModal.classList.add('hidden');
+            appScreen.classList.remove('hidden');
+            addMessageToLog('system', `Jurisdiction set to ${currentJurisdiction}. You can now ask questions.`);
+        }, 300);
+    };
+
+    changeJurisdictionBtn.addEventListener('click', () => {
+        const newJurisdiction = prompt("Enter new jurisdiction:", currentJurisdiction);
+        if (newJurisdiction && newJurisdiction.trim() !== "") {
+            currentJurisdiction = newJurisdiction.trim();
+            jurisdictionDisplay.textContent = currentJurisdiction;
+            analyzerCountryInput.value = currentJurisdiction;
+            addMessageToLog('system', `Jurisdiction changed to ${currentJurisdiction}.`);
+            chatHistory = [];
+        }
+    });
+
+    // --- TAB SWITCHING ---
+    function setActiveTab(tabName) {
+        if (tabName === 'chat') {
+            tabChat.classList.replace('tab-inactive', 'tab-active');
+            tabAnalyzer.classList.replace('tab-active', 'tab-inactive');
+            chatPanel.classList.remove('hidden');
+            analyzerPanel.classList.add('hidden');
+        } else if (tabName === 'analyzer') {
+            tabAnalyzer.classList.replace('tab-inactive', 'tab-active');
+            tabChat.classList.replace('tab-active', 'tab-inactive');
+            analyzerPanel.classList.remove('hidden');
+            chatPanel.classList.add('hidden');
+        }
+    }
+    tabChat.addEventListener('click', () => setActiveTab('chat'));
+    tabAnalyzer.addEventListener('click', () => setActiveTab('analyzer'));
+
+    // --- CHAT LOGIC ---
+    chatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const userInput = chatInput.value.trim();
+        if (!userInput) return;
+
+        addMessageToLog('user', userInput);
+        chatHistory.push({ role: "user", parts: [{ text: userInput }] });
+        chatInput.value = '';
+        chatInput.style.height = 'auto';
+        setStatus('thinking');
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'chat', history: chatHistory, jurisdiction: currentJurisdiction }),
+            });
+
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'API request failed');
+            
+            const aiResponse = result.text;
+            chatHistory.push({ role: "model", parts: [{ text: aiResponse }] });
+            addMessageToLog('ai', aiResponse);
+        } catch (error) {
+            console.error("Chat Error:", error);
+            addMessageToLog('ai', `Error: ${error.message}`);
+        } finally {
+            setStatus('ready');
+        }
+    });
+
+    // --- DOCUMENT ANALYZER LOGIC ---
+    disclaimerCheckbox.addEventListener('change', () => {
+        uploadFieldset.disabled = !disclaimerCheckbox.checked;
+    });
+
+    documentForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const file = fileUpload.files[0];
+        const country = analyzerCountryInput.value.trim();
+
+        if (!file || !country) {
+            analysisResultDiv.innerHTML = '<p class="text-red-400">Please select a file and specify a country.</p>';
+            return;
+        }
+
+        loader.classList.remove('hidden');
+        analysisResultDiv.innerHTML = '<p class="text-gray-500">Your document analysis will appear here.</p>';
+        setStatus('thinking');
+
+        try {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async () => {
+                const base64String = reader.result.split(',')[1];
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: 'analyze',
+                        documentBase64: base64String,
+                        country: country,
+                        mimeType: file.type
+                    }),
+                });
+                
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Unknown server error');
+                analysisResultDiv.innerHTML = marked.parse(result.text);
+            };
+            reader.onerror = (error) => { throw error; };
+
+        } catch (error) {
+            analysisResultDiv.innerHTML = `<p class="text-red-400"><strong>Error:</strong> ${error.message}</p>`;
+            console.error('Analysis Error:', error);
+        } finally {
+            loader.classList.add('hidden');
+            setStatus('ready');
+        }
+    });
+
+    // --- UTILITY FUNCTIONS ---
+    function addMessageToLog(sender, text) {
+        const messageDiv = document.createElement('div');
+        const bubble = document.createElement('div');
+        messageDiv.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
+        if (sender === 'system') {
+            bubble.className = 'chat-bubble-system';
+        } else {
+            bubble.className = `chat-bubble ${sender === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'}`;
+        }
+        bubble.innerHTML = text.replace(/\n/g, '<br>');
+        messageDiv.appendChild(bubble);
+        chatLog.appendChild(messageDiv);
+        chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    function setStatus(status) {
+        const button = chatForm.querySelector('button');
+        switch (status) {
+            case 'thinking':
+                statusText.textContent = 'Processing...';
+                statusText.className = 'text-yellow-400 font-bold tracking-wide';
+                if (button) button.disabled = true;
+                break;
+            default:
+                statusText.textContent = 'Ready';
+                statusText.className = 'text-green-400 font-bold tracking-wide';
+                if (button) button.disabled = false;
+                break;
+        }
+    }
+
+    chatInput.addEventListener('input', () => {
+        chatInput.style.height = 'auto';
+        chatInput.style.height = `${chatInput.scrollHeight}px`;
+    });
+</script>
+</body>
+</html>
