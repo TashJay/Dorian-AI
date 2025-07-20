@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>D.O.R.I.A.N - AI Legal Assistant</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body {
+font-family: 'Inter', sans-serif;
+/* Deeper, more futuristic dark background with a subtle radial gradient */
+background: radial-gradient(circle at top left, #1a2a3a 0%, #0d1a2a 50%, #000000 100%);
+background-color: #000000; /* Fallback */
+}
+.chat-bubble {
+max-width: 80%;
+padding: 14px 20px; /* Slightly more padding */
+border-radius: 20px; /* More rounded corners */
+word-wrap: break-word;
+box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); /* Subtle shadow for depth */
+}
+.chat-bubble-user {
+background-color: #e0f2fe; /* Light blue for user */
+color: #1a202c; /* Darker text */
+border-bottom-right-radius: 8px; /* Softer edge */
+}
+.chat-bubble-ai {
+background-color: #2c3e50; /* Deep blue-gray for AI */
+color: #e0f2fe; /* Light blue text */
+border-bottom-left-radius: 8px; /* Softer edge */
+}
+.chat-bubble-system {
+font-style: italic;
+text-align: center;
+width: 100%;
+max-width: 100%;
+background-color: #1a2a3a; /* Darker background for system messages */
+color: #90aec1; /* Muted, professional system message color */
+border-radius: 12px;
+padding: 8px 16px;
+box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+}
+.onboarding-step {
+transition: opacity 0.6s ease-in-out, transform 0.6s ease-in-out;
+}
+.hidden-step {
+opacity: 0;
+transform: translateY(30px); /* More pronounced hide animation */
+position: absolute;
+pointer-events: none;
+}
+@keyframes talk {
+0%, 100% { transform: scaleY(1); }
+50% { transform: scaleY(1.3); } /* More expressive talking animation */
+}
+.talking {
+animation: talk 0.3s infinite alternate; /* Added alternate for smoother animation */
+}
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #1a2a3a; /* Darker scrollbar track */ }
+::-webkit-scrollbar-thumb { background: #4a6d8c; border-radius: 4px; /* More professional thumb color */ }
+::-webkit-scrollbar-thumb:hover { background: #5a8bbd; }
+
+/* Custom styles for professional glow/shadow */
+.professional-glow-shadow {
+box-shadow: 0 0 15px rgba(0, 188, 212, 0.3), 0 0 30px rgba(0, 188, 212, 0.1); /* Teal glow */
+}
+.input-focus-ring-blue {
+border-color: #3f83f8;
+box-shadow: 0 0 0 3px rgba(63, 131, 248, 0.5); /* Blue focus ring */
+}
+</style>
+</head>
+<body class="text-white">
+
+<div id="app-container" class="w-full h-screen max-w-7xl mx-auto flex flex-col">
+
+<div id="onboarding-modal" class="absolute inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center p-4">
+<div class="relative max-w-lg w-full">
+<div id="onboarding-step-1" class="onboarding-step text-center p-8 bg-gray-900 rounded-3xl shadow-2xl professional-glow-shadow">
+<div class="w-full h-40 bg-gradient-to-br from-blue-900 to-gray-800 rounded-xl mb-6 overflow-hidden flex items-center justify-center">
+<img src="https://placehold.co/600x300/0d1a2a/e0f2fe?text=D.O.R.I.A.N." alt="DORIAN Placeholder" class="w-full h-full object-cover opacity-80">
+</div>
+<h1 class="text-5xl md:text-6xl font-extrabold text-white mb-4 tracking-tight">D.O.R.I.A.N.</h1>
+<p class="text-xl text-blue-200 mb-2 font-light">Your AI-Powered Legal Information Assistant</p>
+<p class="text-sm text-gray-400 mb-6 font-thin">by Jay Irungu</p>
+<button onclick="nextOnboardingStep(1)" class="bg-blue-500 text-white font-bold py-3 px-8 rounded-full transition-all duration-300 hover:bg-blue-600 hover:shadow-lg w-full text-lg">Begin Your Legal Journey</button>
+</div>
+
+<div id="onboarding-step-2" class="onboarding-step hidden-step text-center p-8 bg-gray-900 rounded-3xl shadow-2xl professional-glow-shadow">
+<h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Set Your Jurisdiction</h2>
+<p class="text-gray-300 mb-6 text-lg">To provide the most relevant legal insights, please specify the country or region of law you're interested in.</p>
+<input type="text" id="country-input" placeholder="e.g., Canada, European Union, Kenya" class="w-full bg-gray-800 text-white p-4 rounded-xl mb-6 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 input-focus-ring-blue placeholder-gray-500">
+<button onclick="nextOnboardingStep(2)" class="bg-blue-500 text-white font-bold py-3 px-8 rounded-full transition-all duration-300 hover:bg-blue-600 hover:shadow-lg w-full text-lg">Proceed</button>
+</div>
+
+<div id="onboarding-step-3" class="onboarding-step hidden-step text-center p-8 bg-gray-900 rounded-3xl shadow-2xl professional-glow-shadow">
+<h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Important Disclaimer</h2>
+<p class="text-md text-blue-300 mb-6 p-4 bg-gray-800 rounded-lg border border-blue-700 leading-relaxed">
+Please remember, D.O.R.I.A.N. is an advanced AI assistant designed to provide general legal information for educational and informational purposes only. It is <strong class="text-red-400">not a substitute for professional legal advice</strong> from a qualified attorney. Always consult with a legal professional for advice tailored to your specific situation.
+</p>
+<button onclick="finishOnboarding()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full transition-all duration-300 hover:shadow-lg w-full text-lg">I Understand & Begin</button>
+</div>
+</div>
+</div>
+
+<div id="app-screen" class="hidden w-full h-full flex flex-col md:flex-row p-2 md:p-6 gap-4">
+<div class="w-full md:w-1/3 lg:w-1/4 bg-gray-900 rounded-3xl p-6 flex flex-col items-center justify-between shadow-2xl professional-glow-shadow">
+<div class="w-full text-center">
+<h2 class="text-4xl font-extrabold text-blue-400 mb-6">D.O.R.I.A.N.</h2>
+<div id="avatar-container" class="relative w-48 h-48 md:w-56 md:h-56 mx-auto my-6 bg-gradient-to-br from-blue-800 to-gray-800 rounded-full flex items-center justify-center overflow-hidden border-4 border-blue-500 shadow-xl">
+<svg class="w-36 h-36 md:w-40 md:h-40 text-blue-300" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd"></path></svg>
+<div id="avatar-mouth" class="absolute bottom-12 w-16 h-5 bg-black rounded-full" style="transform-origin: center;"></div>
+</div>
+<p class="text-gray-400 text-lg">Status: <span id="status-text" class="text-green-500 font-bold tracking-wide">Ready</span></p>
+</div>
+<div class="w-full mt-8">
+<p class="text-sm text-gray-500 text-center">Version 1.0.0</p>
+</div>
+</div>
+
+<div class="w-full md:w-2/3 lg:w-3/4 bg-gray-900 rounded-3xl flex flex-col shadow-2xl professional-glow-shadow">
+<div class="p-5 border-b border-gray-700 flex items-center justify-between bg-gray-800 rounded-t-3xl">
+<h2 class="text-2xl font-bold text-white">Legal Chat Assistant</h2>
+<div class="flex items-center gap-3">
+<p class="text-md text-gray-400">Jurisdiction: <span id="jurisdiction-display" class="font-bold text-blue-300"></span></p>
+<button id="change-jurisdiction-btn" class="text-sm bg-blue-700 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-full transition-colors duration-200">Change Jurisdiction</button>
+</div>
+</div>
+
+<div id="chat-log" class="flex-1 p-4 overflow-y-auto space-y-5"></div>
+
+<div class="p-4 border-t border-gray-700 bg-gray-800 rounded-b-3xl">
+<form id="chat-form" class="flex items-center gap-4">
+<textarea id="chat-input" class="flex-1 bg-gray-700 text-gray-100 rounded-xl p-3 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 border border-gray-600 placeholder-gray-400 text-lg" placeholder="Ask a legal question..." rows="1" required></textarea>
+<button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg">
+<svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+</button>
+</form>
+</div>
+</div>
+</div>
+
+<div id="error-modal" class="hidden absolute inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4">
+<div class="bg-gray-800 border border-red-600 rounded-xl p-8 text-center shadow-xl max-w-sm professional-glow-shadow">
+<h3 class="text-2xl font-bold text-red-500 mb-3">System Error!</h3>
+<p id="error-message" class="text-gray-300 mb-6 text-md leading-relaxed"></p>
+<button onclick="document.getElementById('error-modal').classList.add('hidden')" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg transition-colors duration-200">Close</button>
+</div>
+</div>
+</div>
+
+<script type="module">
+// --- START OF CHANGES ---
+// 1. Inserted the new Gemini API Key
+const geminiApiKey = "AIzaSyBTjCw0E5fJwFdDxP1sJvxBnPygEU3Npkw";
+// --- END OF CHANGES ---
+
+const onboardingModal = document.getElementById('onboarding-modal');
+const appScreen = document.getElementById('app-screen');
+const chatForm = document.getElementById('chat-form');
+const chatInput = document.getElementById('chat-input');
+const chatLog = document.getElementById('chat-log');
+const statusText = document.getElementById('status-text');
+const avatarMouth = document.getElementById('avatar-mouth');
+const errorModal = document.getElementById('error-modal');
+const errorMessage = document.getElementById('error-message');
+const countryInput = document.getElementById('country-input');
+const jurisdictionDisplay = document.getElementById('jurisdiction-display');
+const changeJurisdictionBtn = document.getElementById('change-jurisdiction-btn');
+
+let chatHistory = [];
+let currentJurisdiction = "General";
+
+window.nextOnboardingStep = (step) => {
+const currentStepDiv = document.getElementById(`onboarding-step-${step}`);
+const nextStepDiv = document.getElementById(`onboarding-step-${step + 1}`);
+
+if (step === 2) {
+const country = countryInput.value.trim();
+if (!country) {
+alert("Please enter a country to set your jurisdiction.");
+return;
+}
+currentJurisdiction = country;
+jurisdictionDisplay.textContent = currentJurisdiction;
+}
+
+currentStepDiv.classList.add('hidden-step');
+// Add a small delay for the transition to be visible before removing 'hidden-step'
+setTimeout(() => {
+currentStepDiv.classList.add('hidden'); // Fully hide after transition
+nextStepDiv.classList.remove('hidden-step');
+nextStepDiv.classList.remove('hidden'); // Ensure next step is visible
+}, 500); // Match this with your transition duration
+};
+
+window.finishOnboarding = () => {
+onboardingModal.style.opacity = '0';
+setTimeout(() => {
+onboardingModal.classList.add('hidden');
+appScreen.classList.remove('hidden');
+addMessageToLog('system', `Jurisdiction set to ${currentJurisdiction}. You can now ask questions.`);
+}, 300);
+};
+
+changeJurisdictionBtn.addEventListener('click', () => {
+const newJurisdiction = prompt("Enter a new country or jurisdiction:", currentJurisdiction);
+if (newJurisdiction && newJurisdiction.trim() !== "") {
+currentJurisdiction = newJurisdiction.trim();
+jurisdictionDisplay.textContent = currentJurisdiction;
+addMessageToLog('system', `Jurisdiction changed to ${currentJurisdiction}.`);
+// Resetting chat history after changing jurisdiction
+chatHistory = [];
+}
+});
+
+chatForm.addEventListener('submit', async (e) => {
+e.preventDefault();
+const userInput = chatInput.value.trim();
+if (!userInput) return;
+
+addMessageToLog('user', userInput);
+chatInput.value = '';
+chatInput.style.height = 'auto';
+
+setStatus('thinking');
+
+try {
+// The prompt now includes the system instruction with every user query.
+const prompt = `As a legal AI assistant for ${currentJurisdiction}, answer the following. Keep it informative but not overly long. End with the short disclaimer: "AI response. Not legal advice."\n\nUser query: "${userInput}"`;
+
+chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+const payload = { contents: chatHistory };
+// The API URL uses the Gemini model and the provided API key.
+const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`;
+
+const response = await fetch(apiUrl, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify(payload)
+});
+
+if (!response.ok) {
+const errorBody = await response.json();
+throw new Error(`API request failed: ${errorBody.error.message}`);
+}
+
+const result = await response.json();
+
+if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts.length > 0) {
+const aiResponse = result.candidates[0].content.parts[0].text;
+chatHistory.push({ role: "model", parts: [{ text: aiResponse }] });
+addMessageToLog('ai', aiResponse);
+speak(aiResponse);
+} else {
+// Handle cases where the API returns no candidates (e.g., safety blocks)
+const blockReason = result.promptFeedback?.blockReason || 'an unknown reason';
+const emptyResponseText = `I am unable to provide a response to that query, possibly due to safety settings (${blockReason}). Please try a different question.`;
+addMessageToLog('ai', emptyResponseText);
+speak(emptyResponseText);
+}
+
+} catch (error) {
+console.error("Gemini API Error:", error);
+const errorMessageText = "I'm sorry, I encountered an error while processing your request. Please try again later.";
+addMessageToLog('ai', errorMessageText);
+showError(error.message);
+} finally {
+setStatus('ready');
+}
+});
+
+function addMessageToLog(sender, text) {
+const messageDiv = document.createElement('div');
+const bubble = document.createElement('div');
+
+if (sender === 'system') {
+messageDiv.className = 'flex justify-center';
+bubble.className = 'chat-bubble-system';
+} else {
+messageDiv.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
+bubble.className = `chat-bubble ${sender === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'}`;
+}
+
+bubble.innerHTML = text.replace(/\n/g, '<br>');
+messageDiv.appendChild(bubble);
+chatLog.appendChild(messageDiv);
+chatLog.scrollTop = chatLog.scrollHeight;
+}
+
+function speak(text) {
+if (!('speechSynthesis' in window)) {
+console.warn("Speech Synthesis not supported.");
+setStatus('ready');
+return;
+}
+const utterance = new SpeechSynthesisUtterance(text);
+utterance.onstart = () => { setStatus('speaking'); avatarMouth.classList.add('talking'); };
+utterance.onend = () => { setStatus('ready'); avatarMouth.classList.remove('talking'); };
+utterance.onerror = (e) => {
+console.error('Speech synthesis error:', e.error);
+setStatus('ready');
+avatarMouth.classList.remove('talking');
+};
+window.speechSynthesis.cancel();
+window.speechSynthesis.speak(utterance);
+}
+
+function setStatus(status) {
+const button = chatForm.querySelector('button');
+switch (status) {
+case 'thinking':
+statusText.textContent = 'Thinking...';
+statusText.className = 'text-yellow-400 font-bold tracking-wide';
+button.disabled = true;
+break;
+case 'speaking':
+statusText.textContent = 'Speaking...';
+statusText.className = 'text-blue-400 font-bold tracking-wide';
+button.disabled = true;
+break;
+default:
+statusText.textContent = 'Ready';
+statusText.className = 'text-green-500 font-bold tracking-wide';
+button.disabled = false;
+break;
+}
+}
+
+function showError(message) {
+errorMessage.textContent = message;
+errorModal.classList.remove('hidden');
+}
+
+chatInput.addEventListener('input', () => {
+chatInput.style.height = 'auto';
+const scrollHeight = chatInput.scrollHeight;
+const maxHeight = 150;
+if (scrollHeight > maxHeight) {
+chatInput.style.overflowY = 'auto';
+chatInput.style.height = maxHeight + 'px';
+} else {
+chatInput.style.overflowY = 'hidden';
+chatInput.style.height = scrollHeight + 'px';
+}
+});
+</script>
+</body>
+</html>
